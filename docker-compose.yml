@@ -1,0 +1,28 @@
+version: '3.1'
+
+services:
+
+  postgres:
+    image: postgres
+#    restart: always
+#    command:
+#      - "postgres"
+#      - "-c"
+#      - "config_file=/var/lib/postgresql/data/postgresql.conf"
+    environment:
+      POSTGRES_USER: admin
+      POSTGRES_PASSWORD: admin
+#      POSTGRES_DB: db_name
+      PGDATA: "/var/lib/postgresql/data/pgdata"
+    ports:
+      - 5432:5432
+    volumes:
+      - ./db/:/var/lib/postgresql/data
+#      - ./postgresql.conf:/var/lib/postgresql/data/postgresql.conf
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U admin -d admin"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+      start_period: 10s
+    restart: unless-stopped

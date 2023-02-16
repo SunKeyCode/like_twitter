@@ -1,13 +1,16 @@
 import os
-import time
 from datetime import datetime
 from typing import List
 
 import aiofiles
-from fastapi import FastAPI, Path, status, HTTPException, File, UploadFile, Depends
+from fastapi import FastAPI, status, HTTPException, UploadFile, Depends
 from fastapi.encoders import jsonable_encoder
+from sqlalchemy.ext.asyncio import AsyncSession
+from sqlalchemy.exc import IntegrityError
+from sqlalchemy.orm.exc import FlushError
 
 from models import User, Tweet, Like, Media, MEDIA_PATH
+from database import async_session
 from schemas import (
     CreateUserModel,
     CreateTweetModelIn,
@@ -15,27 +18,43 @@ from schemas import (
     MainTweetResponseModel,
     CreateTweetModelOut,
 )
-from custom_exceptions import DbIntegrityError
 from utils import (
     reformat_tweet_response,
     reformat_response_iterable,
     reformat_any_response
 )
+import crud
 
 app = FastAPI()
 
 storage = dict()
 
 
+async def get_db_session():
+    try:
+        async with async_session() as session:
+            yield session
+    except IntegrityError as exc:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND, detail=exc.args
+        )
+    except FlushError as exc:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND, detail=exc.args
+        )
+
+
 @app.on_event("startup")
-async def create_current_user():
-    storage["current_user"] = await User.get_user(user=1)
+async def get_current_user():
+    storage["current_user"] = await crud.read_user(user_id=1, session=async_session())
 
 
 @app.get("/api/users/{user_id}", response_model=UserMainResponseModelBrief,
          tags=["users"])
-async def get_user(user_id: int):
-    user = await User.get_user(user_id, include_relations="all")
+async def get_user(user_id: int, session: AsyncSession = Depends(get_db_session)):
+    user = await crud.read_user(
+        session=session, user_id=user_id, include_relations="all"
+    )
     if user:
         return reformat_any_response(user, "user")
     else:
@@ -44,27 +63,30 @@ async def get_user(user_id: int):
 
 
 @app.post("/api/users", status_code=status.HTTP_201_CREATED, tags=["users"])
-async def create_user(user_data: CreateUserModel):
-    user = User(**user_data.dict())
-    await user.add_user()
+async def create_user(
+        user_data: CreateUserModel,
+        session: AsyncSession = Depends(get_db_session)
+):
+    user = await crud.create_user(session=session, user_data=user_data)
+
     return reformat_any_response(user.user_id, "user_id")
 
 
 @app.post("/api/tweets", tags=["tweets"], description="Creates new tweet",
           response_model=CreateTweetModelOut)
-async def create_tweet(tweet_data: CreateTweetModelIn):
-    tweet_as_dict = tweet_data.dict()
-    media = tweet_as_dict.pop("tweet_media_ids")
-    tweet = Tweet(**tweet_as_dict)
-    await tweet.add_tweet(media)
-
+async def create_tweet(
+        tweet_data: CreateTweetModelIn, session: AsyncSession = Depends(get_db_session)
+):
+    tweet = await crud.create_tweet(session=session, tweet_data=tweet_data)
     return reformat_any_response(key="tweet_id", value=tweet.tweet_id)
 
 
 @app.delete("/api/tweets/{tweet_id}", tags=["tweets"])
-async def delete_tweet(tweet_id: int):
+async def delete_tweet(tweet_id: int, session: AsyncSession = Depends(get_db_session)):
     user = storage["current_user"]
-    if await Tweet.delete_tweet(tweet_id, user):
+    if await crud.delete_tweet(
+            session=session, tweet_id=tweet_id, user_id=user.user_id
+    ):
         return {"result": True}
     else:
         raise HTTPException(
@@ -85,12 +107,11 @@ async def get_tweet(tweet_id: int):
 
 
 @app.get("/api/tweets", response_model=MainTweetResponseModel, tags=["feed"])
-async def get_feed():
+async def get_feed(session: AsyncSession = Depends(get_db_session)):
     user = storage["current_user"]
-    tweets = await Tweet.feed(user.user_id)
+    tweets = await crud.read_feed(session=session, user_id=user.user_id)
 
     tweets_as_json = map(jsonable_encoder, tweets)
-
     return reformat_response_iterable(
         tweets_as_json,
         func=reformat_tweet_response,
@@ -99,73 +120,44 @@ async def get_feed():
 
 
 @app.post("/api/tweets/{tweet_id}/likes", description="Add like to tweet")
-async def add_like(tweet_id: int):
+async def add_like(tweet_id: int, session: AsyncSession = Depends(get_db_session)):
     user = storage["current_user"]
-    if await Like.add_like(tweet_id=tweet_id, user=user):
-        return {"result": True}
-    else:
-        raise HTTPException(
-            status_code=status.HTTP_404_NOT_FOUND, detail="like exists"
-        )
+    await crud.create_like(session=session, tweet_id=tweet_id, user_id=user.user_id)
+    return {"result": True}
 
 
 @app.delete("/api/tweets/{tweet_id}/likes", status_code=status.HTTP_202_ACCEPTED)
-async def delete_like(tweet_id: int):
+async def delete_like(tweet_id: int, session: AsyncSession = Depends(get_db_session)):
     user = storage["current_user"]
-    if await Like.remove_like(tweet_id=tweet_id, user=user):
-        return {"result": True}
-    else:
-        raise HTTPException(
-            status_code=status.HTTP_404_NOT_FOUND, detail="like not found"
-        )
+    await crud.remove_like(session=session, tweet_id=tweet_id, user_id=user.user_id)
+    return {"result": True}
 
 
 @app.post("/api/medias")
-async def add_medias(files: List[UploadFile]):
+async def add_medias(
+        files: List[UploadFile], session: AsyncSession = Depends(get_db_session)
+):
     user = storage["current_user"]
-    medias = []
+    medias = await crud.create_media(
+        session=session,
+        files=files,
+        user_id=user.user_id
+    )
 
-    if not os.path.exists(MEDIA_PATH.format(user=user.user_id)):
-        os.mkdir(MEDIA_PATH.format(user=user.user_id))
-
-    for file in files:
-        timestamp = datetime.timestamp(datetime.now())
-        # обработать filename
-        # from werkzeug.utils import secure_filename
-        # или написать свой вариант
-        new_filename = "{:.4f}_{}".format(timestamp, file.filename)
-
-        media = Media(name=new_filename)
-        await media.add(user=user)
-
-        content = await file.read()
-        async with aiofiles.open(
-                file="".join(
-                    [MEDIA_PATH.format(user=user.user_id), new_filename]
-                ),
-                mode="wb"
-        ) as file_to_write:
-            await file_to_write.write(content)
-
-        medias.append(media)
-
-    return {"result": True, "medias": medias}
+    return medias
 
 
 @app.post("/api/users/{user_id}/follow")
-async def follow_user(user_id: int):
+async def follow_user(user_id: int, session: AsyncSession = Depends(get_db_session)):
     user = storage["current_user"]
-    if await user.follow(user=user_id):
-        return {"result": True}
-    else:
-        raise HTTPException(
-            status_code=status.HTTP_404_NOT_FOUND, detail="already followed"
-        )
+    await crud.follow_user(session=session, user_who_follow=user, user_id=user_id)
+
+    return {"result": True}
 
 
 @app.delete("/api/users/{user_id}/follow")
-async def unfollow_user(user_id: int):
+async def unfollow_user(user_id: int, session: AsyncSession = Depends(get_db_session)):
     user = storage["current_user"]
-    await user.unfollow(user=user_id)
+    await crud.unfollow(session=session, user_who_unfollow=user, user_id=user_id)
 
     return {"result": True}

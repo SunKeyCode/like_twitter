@@ -3,19 +3,29 @@ from datetime import datetime, date
 from typing import List, Union
 
 from sqlalchemy import (
-    Column, Integer, String, Sequence, ForeignKey, Date, delete
+    Column, Integer, String, Sequence, ForeignKey, Date, delete, func
 )
 from sqlalchemy.orm import relationship, Mapped, join, mapped_column, selectinload, \
-    joinedload
-from sqlalchemy.ext.mutable import MutableList
+    joinedload, subqueryload, remote, foreign
 from sqlalchemy.future import select
 from sqlalchemy.dialects.postgresql import BYTEA, ARRAY
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy.exc import IntegrityError
+
 from asyncpg.exceptions import ForeignKeyViolationError
 
 from database import Base, async_session, async_engine, async_sessionmaker
 from custom_exceptions import DbIntegrityError
+
+MEDIA_PATH = "static/images/{user}/"
+
+
+class Follower(Base):
+    __tablename__ = "table_followers"
+    # constraint user_id != follower_id
+    # on_delete???
+    user_id = Column(ForeignKey("table_users.user_id"), primary_key=True)
+    follower_id = Column(ForeignKey("table_users.user_id"), primary_key=True)
 
 
 class User(Base):
@@ -29,6 +39,20 @@ class User(Base):
 
     # delete orphan???
     tweets: Mapped[List["Tweet"]] = relationship(back_populates="author", lazy="raise")
+
+    followers: Mapped[List["User"]] = relationship(
+        "User",
+        secondary="table_followers",
+        primaryjoin=user_id == Follower.user_id,
+        secondaryjoin=user_id == Follower.follower_id,
+        # backref="following"
+    )
+
+    following: Mapped[List["User"]] = relationship(
+        secondary="table_followers",
+        primaryjoin=user_id == Follower.follower_id,
+        secondaryjoin=user_id == Follower.user_id
+    )
 
     async def add_user(
             self,
@@ -61,6 +85,32 @@ class User(Base):
             followers = query_result.scalars().all()
             return followers
 
+    @classmethod
+    async def get_user(
+            cls,
+            user: Union[int, "User"],
+            include_relations: str = None,
+            a_session: async_sessionmaker[AsyncSession] = async_session
+    ):
+        statement = select(cls).where(cls.user_id == user)
+        if include_relations == "followers":
+            statement = statement.options(
+                selectinload(cls.followers),
+            )
+        elif include_relations == "following":
+            statement = statement.options(
+                selectinload(cls.following),
+            )
+        elif include_relations == "all":
+            statement = statement.options(
+                selectinload(cls.followers),
+                selectinload(cls.following),
+            )
+
+        async with a_session() as session:
+            user = await session.scalars(statement)
+            return user.one_or_none()
+
     async def user_follows(
             self,
             only_id=False,
@@ -88,22 +138,6 @@ class User(Base):
             followers = query_result.scalars().all()
             return followers
 
-    @classmethod
-    async def get_user(
-            cls,
-            user_id: int,
-            a_session: async_sessionmaker[AsyncSession] = async_session,
-            with_tweets=False
-    ):
-        async with a_session() as session:
-            query_result = await session.execute(
-                select(cls)
-                .where(cls.user_id == user_id)
-            )
-            user: User = query_result.scalars().one_or_none()
-
-        return user
-
     async def follow(
             self,
             user: Union["User", int],
@@ -116,22 +150,28 @@ class User(Base):
         else:
             raise TypeError
 
-        add_check_query = select(Follower) \
-            .where(Follower.follower_id == self.user_id) \
-            .where(Follower.user_id == user_id)
+        # cath IntegrityError or check presence in the database???
 
-        async with a_session() as session:
-            async with session.begin():
-                follower_association = Follower()
-                follower_association.follower_id = self.user_id
-                follower_association.user_id = user_id
-                session.add(follower_association)
+        select_query = select(Follower).where(
+            Follower.follower_id == self.user_id,
+            Follower.user_id == user_id
+        )
+        try:
+            async with a_session() as session:
+                async with session.begin():
+                    is_already_follow = await session.scalar(select_query)
 
-            check = await session.execute(add_check_query)
+                    if is_already_follow:
+                        return False
+                    else:
+                        follower_association = Follower()
+                        follower_association.follower_id = self.user_id
+                        follower_association.user_id = user_id
+                        session.add(follower_association)
 
-        if check.one_or_none():
-            return True
-        else:
+                        return True
+        except IntegrityError as exc:
+            # сделать кастом эксепшн
             return False
 
     async def unfollow(
@@ -154,9 +194,6 @@ class User(Base):
                     .where(Follower.user_id == user_id)
                 )
 
-    def to_json(self):
-        return {col.name: getattr(self, col.name) for col in self.__table__.columns}
-
     def __repr__(self):
         return f"User(id={self.user_id}, user_name={self.user_name})"
 
@@ -167,18 +204,59 @@ class Tweet(Base):
     tweet_id: int = Column(Integer, Sequence("tweet_id"), primary_key=True)
     author_id: int = Column(ForeignKey("table_users.user_id"), nullable=False)
     content: str = Column(String, nullable=False)
-    picture_id: int = Column(ForeignKey("table_pictures.picture_id"), nullable=True)
+    # добавить дату и время добавления твита,
+    # чтобы использовать это для сортировки
+    # order_by дата/время, количество лайков
 
     likes: Mapped[List["Like"]] = relationship(lazy="raise")
 
     author: Mapped["User"] = relationship(back_populates="tweets", lazy="raise")
 
+    attachments: Mapped[List["Media"]] = relationship(
+        secondary="table_media_tweet_relation",
+        lazy="raise",
+    )
+
     async def add_tweet(
-            self, a_session: async_sessionmaker[AsyncSession] = async_session
+            self,
+            tweet_media: list[int],
+            a_session: async_sessionmaker[AsyncSession] = async_session
     ):
         async with a_session() as session:
             async with session.begin():
-                session.add(self)
+                if tweet_media:
+                    for media_id in tweet_media:
+                        # проверка на существование media в базе !!!!!!!!!!!!!
+                        media = await session.get(Media, media_id)
+                        self.attachments.append(media)
+                    session.add(self)
+                else:
+                    session.add(self)
+
+    @classmethod
+    async def delete_tweet(cls, tweet_id: int, user: int | User,
+                           a_session: async_sessionmaker[AsyncSession] = async_session):
+
+        if isinstance(user, User):
+            select_query = select(Tweet).where(
+                Tweet.tweet_id == tweet_id, Tweet.author == user
+            )
+        elif isinstance(user, int):
+            select_query = select(Tweet).where(
+                Tweet.tweet_id == tweet_id, Tweet.author_id == user
+            )
+        else:
+            raise ValueError
+
+        async with a_session() as session:
+            async with session.begin():
+                tweet_query_result = await session.scalars(select_query)
+                tweet = tweet_query_result.one_or_none()
+                if tweet:
+                    await session.delete(tweet)
+                    return True
+                else:
+                    return False
 
     @classmethod
     async def tweet_by_id(
@@ -187,43 +265,54 @@ class Tweet(Base):
             a_session: async_sessionmaker[AsyncSession] = async_session
     ):
         async with a_session() as session:
-            query = select(cls) \
-                .where(cls.tweet_id == tweet_id) \
-                .options(selectinload(cls.likes).selectinload(Like.user),
-                         selectinload(cls.author))
-            query_result = await session.execute(query)
+            query_result = await session.execute(
+                select(cls, func.count(cls.likes))
+                .where(cls.tweet_id == tweet_id)
+                .options(
+                    joinedload(cls.likes).selectinload(Like.user),
+                    joinedload(cls.author),
+                    selectinload(cls.attachments)
+                ).group_by(cls.tweet_id)
+            )
             tweet = query_result.scalars().unique().one_or_none()
 
         return tweet
 
     @classmethod
-    async def tweets_list(
+    async def feed(
             cls,
-            users: List[int],
+            user: Union[int, "User"],
             a_session: async_sessionmaker[AsyncSession] = async_session,
-    ) -> List[User] | List[int]:
+
+    ):
+        sub_query = select(Follower.user_id).where(Follower.follower_id == user)
+        following_query = select(User.user_id).where(User.user_id.in_(sub_query))
 
         async with a_session() as session:
-            query = select(cls) \
-                .where(cls.author_id.in_(users)) \
-                .options(selectinload(cls.likes).selectinload(Like.user),
-                         selectinload(cls.author))
-            query_result = await session.execute(
-                # select(cls).where(cls.author_id.in_(users))
-                query
+            tweets = await session.scalars(
+                select(
+                    cls, func.count(Like.user_id).over(partition_by=cls.tweet_id)
+                )
+                .where(cls.author_id.in_(following_query))
+                .options(
+                    joinedload(cls.likes).subqueryload(Like.user),
+                    selectinload(cls.author),
+                    selectinload(cls.attachments)
+                )
+                .order_by(
+                    func.count(Like.user_id).over(partition_by=cls.tweet_id).desc()
+                )
             )
-            tweets = query_result.scalars().all()
+            # ---------------------------------------
+            # order by like count
 
-            # limit and offset !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
-
-        return tweets
+            return tweets.unique().all()
+            # ---------------------------------------
+            # limits and offsets
 
     def __repr__(self):
         return f"Tweet(id={self.tweet_id}, " \
                f"author={self.author_id}, text={self.content})"
-
-    def to_json(self):
-        return {col.name: getattr(self, col.name) for col in self.__table__.columns}
 
 
 class Like(Base):
@@ -239,61 +328,119 @@ class Like(Base):
 
     user: Mapped["User"] = relationship(lazy="raise")
 
+    @classmethod
     async def add_like(
-            self,
+            cls,
+            tweet_id: int,
+            user: int | User,
             a_session: async_sessionmaker[AsyncSession] = async_session
     ):
-        async with a_session() as session:
-            try:
-                async with session.begin():
-                    session.add(self)
-            except ForeignKeyViolationError:
-                print("*" * 50)
-            except IntegrityError as exc:
 
-                raise DbIntegrityError(exc.orig)
+        if isinstance(user, User):
+            select_query = select(Like).where(
+                Like.tweet_id == tweet_id, Like.user == user
+            )
+            user_id = user.user_id
+        elif isinstance(user, int):
+            select_query = select(Tweet).where(
+                Like.tweet_id == tweet_id, Like.user_id == user
+            )
+            user_id = user
+        else:
+            raise ValueError
+
+        async with a_session() as session:
+            async with session.begin():
+                like_query_result = await session.scalars(select_query)
+                like_exists = like_query_result.one_or_none()
+                if like_exists:
+                    return False
+                else:
+                    new_like = Like(tweet_id=tweet_id, user_id=user_id)
+                    # --------------------------
+                    # ловить IntegrityError ????
+                    session.add(new_like)
+                    return True
 
     @classmethod
     async def remove_like(
             cls,
             tweet_id,
-            user_id,
+            user: int | User,
             a_session: async_sessionmaker[AsyncSession] = async_session
     ):
 
-        # select_query = select()
-        delete_query = delete(Like) \
-            .where(Like.user_id == user_id) \
-            .where(Like.tweet_id == tweet_id).returning()
+        if isinstance(user, User):
+            select_query = select(Like).where(
+                Like.tweet_id == tweet_id, Like.user == user
+            )
+        elif isinstance(user, int):
+            select_query = select(Tweet).where(
+                Like.tweet_id == tweet_id, Like.user_id == user
+            )
+        else:
+            raise ValueError
 
         async with a_session() as session:
             async with session.begin():
-                deleted_row = await session.execute(delete_query)
+                like_query_result = await session.scalars(select_query)
+                like = like_query_result.one_or_none()
+                if like:
+                    await session.delete(like)
+                    return True
+                else:
+                    return False
 
-        return deleted_row.rowcount
 
+class Media(Base):
+    __tablename__ = "table_media"
 
-class Picture(Base):
-    __tablename__ = "table_pictures"
-
-    picture_id: int = Column(Integer, Sequence("picture_id"), primary_key=True)
+    media_id: int = Column(Integer, Sequence("media_id"), primary_key=True)
     name: str = Column(String, nullable=False)
-    binary_data = Column(BYTEA, nullable=False)
+    path: str = Column(String, default=MEDIA_PATH.format(user="unknown_user"))
 
-    # picture_path = Column(String, nullable=False) ????
+    # -----------------------------------------------
+    # оставить только path, там будет path + filename
 
-    async def add(self, a_session: async_sessionmaker[AsyncSession] = async_session):
+    @classmethod
+    async def add_many(cls,
+                       user: int | User,
+                       medias: list["Media"],
+                       a_session: async_sessionmaker[AsyncSession] = async_session):
+
+        if isinstance(user, int):
+            path = MEDIA_PATH.format(user=user)
+        elif isinstance(user, User):
+            path = MEDIA_PATH.format(user=user.user_id)
+        else:
+            raise ValueError
+
+        async with a_session() as session:
+            async with session.begin():
+                pass
+
+    async def add(self,
+                  user: int | User,
+                  a_session: async_sessionmaker[AsyncSession] = async_session
+                  ):
+        if isinstance(user, int):
+            self.path = MEDIA_PATH.format(user=user)
+        elif isinstance(user, User):
+            self.path = MEDIA_PATH.format(user=user.user_id)
+        else:
+            raise ValueError
+
         async with a_session() as session:
             async with session.begin():
                 session.add(self)
 
 
-class Follower(Base):
-    __tablename__ = "table_followers"
-    # constraint user_id != follower_id
-    # on_delete???
-    user_id = Column(ForeignKey("table_users.user_id"), primary_key=True)
-    follower_id = Column(ForeignKey("table_users.user_id"), primary_key=True)
+class MediaTweetRelation(Base):
+    __tablename__ = "table_media_tweet_relation"
+
+    tweet_id: Mapped[int] = Column(ForeignKey("table_tweets.tweet_id"),
+                                   primary_key=True)
+    media_id: Mapped[int] = Column(ForeignKey("table_media.media_id"), primary_key=True)
 
 
 async def create_test_data(a_session: async_session):

@@ -47,25 +47,45 @@ class UserMainResponseModelBrief(BaseModel):
 
 class LikeForTweetModel(LikeBaseModel):
     user_id: int
-    user: BriefInfoUserModel
+    user_name: str
 
     class Config:
         orm_mode = True
+
+
+class AttachmentModel(BaseModel):
+    path: str
+    name: str
+    media_id: int
 
 
 class TweetBaseModel(BaseModel):
     content: str
 
 
-class CreateTweetModel(TweetBaseModel):
+class CreateTweetModelIn(TweetBaseModel):
     author_id: int
-    picture_id: int | None = None
+    tweet_media_ids: List[int] = []
+
+
+class CreateTweetModelOut(BaseModel):
+    result: bool
+    tweet_id: int
+
+    class Config:
+        orm_mode = True
 
 
 class TweetResponseModel(TweetBaseModel):
     tweet_id: int
-    author: AuthorOfTweetModel | None = None
-    likes: List[LikeForTweetModel] | None = None
+    author: AuthorOfTweetModel
+    likes: List[LikeForTweetModel] | None = []
+    attachments: List[AttachmentModel]
 
     class Config:
         orm_mode = True
+
+
+class MainTweetResponseModel(BaseModel):
+    result: bool
+    tweets: TweetResponseModel | List[TweetResponseModel] | None

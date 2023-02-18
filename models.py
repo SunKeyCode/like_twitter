@@ -1,9 +1,10 @@
 import asyncio
+import logging
 from datetime import datetime, date
 from typing import List
 
 from sqlalchemy import (
-    Column, Integer, String, Sequence, Date, ForeignKey,
+    Column, Integer, String, Sequence, Date, ForeignKey, Identity
 )
 from sqlalchemy.orm import relationship, Mapped, selectinload, joinedload
 from sqlalchemy.future import select
@@ -11,6 +12,7 @@ from sqlalchemy.ext.asyncio import AsyncSession
 
 from database import Base, async_session, async_engine, async_sessionmaker
 
+logger = logging.getLogger("main.models")
 MEDIA_PATH = "static/images/{user}/"
 
 
@@ -25,7 +27,7 @@ class Follower(Base):
 class User(Base):
     __tablename__ = "table_users"
 
-    user_id: int = Column(Integer, Sequence("user_id"), primary_key=True)
+    user_id: int = Column(Integer, Identity(always=True), primary_key=True)
     user_name: str = Column(String(20), nullable=False, unique=True)
     first_name: str = Column(String(50), nullable=True)
     last_name: str = Column(String(50), nullable=True)
@@ -133,6 +135,7 @@ class MediaTweetRelation(Base):
 async def create_test_data(a_session: async_sessionmaker[AsyncSession]):
     async with a_session() as session:
         async with session.begin():
+            logger.debug("Creating test users")
             user1 = User(user_name="MAIN TEST USER")
             user2 = User(user_name="user2")
             user3 = User(user_name="user3")

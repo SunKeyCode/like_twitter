@@ -1,5 +1,8 @@
 from typing import Union, List
 from datetime import datetime
+import logging
+import asyncio
+import os
 
 import aiofiles
 from sqlalchemy import delete, func
@@ -10,6 +13,8 @@ from fastapi import UploadFile
 
 from models import User, Follower, Tweet, Media, Like, MEDIA_PATH
 from schemas import CreateUserModel, CreateTweetModelIn
+
+logger = logging.getLogger("main.crud")
 
 
 async def create_user(session: AsyncSession, user_data: CreateUserModel):
@@ -57,6 +62,11 @@ async def create_media(
         user_id: int
 ):
     path = MEDIA_PATH.format(user=user_id)
+
+    if not os.path.exists(path):
+        os.mkdir(path)
+        logger.debug(f"Created path: {path}")
+
     medias = []
 
     for file in files:
@@ -194,8 +204,7 @@ async def delete_tweet(
             return False
 
 
-async def remove_like(
-
+async def delete_like(
         session: AsyncSession,
         tweet_id: int,
         user_id: int,
@@ -203,7 +212,6 @@ async def remove_like(
     select_query = select(Like).where(
         Like.tweet_id == tweet_id, Like.user_id == user_id
     )
-
     async with session.begin():
         like_query_result = await session.scalars(select_query)
         like = like_query_result.one_or_none()

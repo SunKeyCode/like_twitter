@@ -1,16 +1,17 @@
-import os
-from datetime import datetime
+import logging
 from typing import List
 
-import aiofiles
 from fastapi import FastAPI, status, HTTPException, UploadFile, Depends
 from fastapi.encoders import jsonable_encoder
+from fastapi.responses import JSONResponse
+from fastapi.exceptions import RequestValidationError
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy.exc import IntegrityError
 from sqlalchemy.orm.exc import FlushError
+from logging_tree import printout
 
-from models import User, Tweet, Like, Media, MEDIA_PATH
-from database import async_session
+from models import Tweet
+from database import async_session, async_engine
 from schemas import (
     CreateUserModel,
     CreateTweetModelIn,
@@ -21,13 +22,25 @@ from schemas import (
 from utils import (
     reformat_tweet_response,
     reformat_response_iterable,
-    reformat_any_response
+    reformat_any_response,
+    reformat_error,
 )
+import custom_exceptions
 import crud
+from config import DEBUG
+from logger import init_logger
+
+init_logger()
+
+logger = logging.getLogger("main.routes")
 
 app = FastAPI()
 
 storage = dict()
+
+# printout()
+
+logger.info("Application started.")
 
 
 async def get_db_session():
@@ -35,18 +48,83 @@ async def get_db_session():
         async with async_session() as session:
             yield session
     except IntegrityError as exc:
-        raise HTTPException(
-            status_code=status.HTTP_404_NOT_FOUND, detail=exc.args
-        )
+        raise custom_exceptions.DbIntegrityError(exc.args)
     except FlushError as exc:
         raise HTTPException(
             status_code=status.HTTP_404_NOT_FOUND, detail=exc.args
         )
 
 
+@app.exception_handler(custom_exceptions.NoUserFoundError)
+async def no_user_found_handler(_, exc: custom_exceptions.NoUserFoundError):
+    # сделать объект ErrorMessage через дата класс???
+    return JSONResponse(
+        status_code=status.HTTP_404_NOT_FOUND,
+        content=jsonable_encoder(
+            {
+                "result": False,
+                "error_type": "No user found error",
+                "error_message": exc.error_message,
+            }
+        )
+    )
+
+
+@app.exception_handler(custom_exceptions.DbIntegrityError)
+async def integrity_error_handler(_, exc: custom_exceptions.DbIntegrityError):
+    logger.error(f"Integrity error: {exc.error_message}")
+    return JSONResponse(
+        status_code=status.HTTP_400_BAD_REQUEST,
+        content=jsonable_encoder(
+            {
+                "result": False,
+                "error_type": "DbIntegrityError",
+                "error_message": exc.error_message,
+            }
+        )
+    )
+
+
+@app.exception_handler(RequestValidationError)
+async def validation_error_handler(_, exc: RequestValidationError):
+    logger.error(f"Validation error: {exc.errors()}")
+    return JSONResponse(
+        status_code=status.HTTP_422_UNPROCESSABLE_ENTITY,
+        content=jsonable_encoder(
+            {
+                "result": False,
+                "error_type": "RequestValidationError",
+                "error_message": exc.errors() if DEBUG else "wrong input field(s)",
+            }
+        )
+    )
+
+
+@app.exception_handler(Exception)
+async def unexpected_error_handler(_, exc: Exception):
+    # logger.error(f"Unexpected error:", exc_info=exc)
+    return JSONResponse(
+        status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+        content=jsonable_encoder(
+            {
+                "result": False,
+                "error_type": "Exception",
+                "error_message": "Unexpected server error",
+            }
+        )
+    )
+
+
 @app.on_event("startup")
-async def get_current_user():
-    storage["current_user"] = await crud.read_user(user_id=1, session=async_session())
+async def startup():
+    async with async_session() as session:
+        storage["current_user"] = await crud.read_user(user_id=1, session=session)
+        logger.debug(f"current_user={storage['current_user']}")
+
+
+@app.on_event("shutdown")
+async def shutdown():
+    await async_engine.dispose()
 
 
 @app.get("/api/users/{user_id}", response_model=UserMainResponseModelBrief,
@@ -58,8 +136,7 @@ async def get_user(user_id: int, session: AsyncSession = Depends(get_db_session)
     if user:
         return reformat_any_response(user, "user")
     else:
-        pass
-        #  raise
+        raise custom_exceptions.NoUserFoundError(user_id)
 
 
 @app.post("/api/users", status_code=status.HTTP_201_CREATED, tags=["users"])
@@ -84,14 +161,9 @@ async def create_tweet(
 @app.delete("/api/tweets/{tweet_id}", tags=["tweets"])
 async def delete_tweet(tweet_id: int, session: AsyncSession = Depends(get_db_session)):
     user = storage["current_user"]
-    if await crud.delete_tweet(
-            session=session, tweet_id=tweet_id, user_id=user.user_id
-    ):
-        return {"result": True}
-    else:
-        raise HTTPException(
-            status_code=status.HTTP_404_NOT_FOUND, detail="tweet not found"
-        )
+    await crud.delete_tweet(
+        session=session, tweet_id=tweet_id, user_id=user.user_id
+    )
 
 
 @app.get("/api/tweets/{tweet_id}", response_model=MainTweetResponseModel,
@@ -112,6 +184,7 @@ async def get_feed(session: AsyncSession = Depends(get_db_session)):
     tweets = await crud.read_feed(session=session, user_id=user.user_id)
 
     tweets_as_json = map(jsonable_encoder, tweets)
+
     return reformat_response_iterable(
         tweets_as_json,
         func=reformat_tweet_response,
@@ -129,7 +202,7 @@ async def add_like(tweet_id: int, session: AsyncSession = Depends(get_db_session
 @app.delete("/api/tweets/{tweet_id}/likes", status_code=status.HTTP_202_ACCEPTED)
 async def delete_like(tweet_id: int, session: AsyncSession = Depends(get_db_session)):
     user = storage["current_user"]
-    await crud.remove_like(session=session, tweet_id=tweet_id, user_id=user.user_id)
+    await crud.delete_like(session=session, tweet_id=tweet_id, user_id=user.user_id)
     return {"result": True}
 
 

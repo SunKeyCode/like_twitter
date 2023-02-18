@@ -48,3 +48,9 @@ def reformat_any_response(value: Any | List[Any], key: str | List[str] = None) -
         raise TypeError
 
 
+def reformat_error(exc: tuple):
+    try:
+        return exc[0][0]
+    except IndexError:
+        return "error massage failed"
+

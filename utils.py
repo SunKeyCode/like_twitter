@@ -1,7 +1,10 @@
 from typing import Any, Iterable, Callable, List
+from logging import getLogger
+
+logger = getLogger("main.utils")
 
 
-def reformat_tweet_response(tweet: dict | None) -> dict:
+def reformat_tweet_response(tweet: dict | None) -> dict | None:
     new_likes = []
     if tweet is None:
         return tweet
@@ -14,10 +17,9 @@ def reformat_tweet_response(tweet: dict | None) -> dict:
             new_likes.append(like)
 
         tweet["likes"] = new_likes
-    except KeyError:
-        raise KeyError
-    #     как то обработать
-    # return reformat_any_response(tweet, "tweet")
+    except KeyError as exc:
+        logger.exception("Key error in reformat_tweet_response()", exc_info=exc)
+        return None
     return tweet
 
 
@@ -53,4 +55,3 @@ def reformat_error(exc: tuple):
         return exc[0][0]
     except IndexError:
         return "error massage failed"
-

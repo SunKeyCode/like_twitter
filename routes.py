@@ -1,9 +1,10 @@
 import logging
+import time
 from typing import List
 
-from fastapi import FastAPI, status, HTTPException, UploadFile, Depends
+from fastapi import FastAPI, status, HTTPException, UploadFile, Depends, Request
 from fastapi.encoders import jsonable_encoder
-from fastapi.responses import JSONResponse
+from fastapi.responses import JSONResponse, StreamingResponse
 from fastapi.exceptions import RequestValidationError
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy.exc import IntegrityError
@@ -29,6 +30,9 @@ import custom_exceptions
 import crud
 from config import DEBUG
 from logger import init_logger
+from database import async_session
+
+test_session = async_session()
 
 init_logger()
 
@@ -41,6 +45,12 @@ storage = dict()
 # printout()
 
 logger.info("Application started.")
+
+
+@app.get("/api/test/{user_id}")
+async def test(user_id: int):
+    user = await crud.get_user_test(test_session, user_id)
+    return user
 
 
 async def get_db_session():
@@ -124,6 +134,7 @@ async def startup():
 
 @app.on_event("shutdown")
 async def shutdown():
+    await test_session.close()
     await async_engine.dispose()
 
 

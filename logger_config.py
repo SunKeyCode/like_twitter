@@ -38,15 +38,15 @@ LOGGER_CONF = {
             "level": "DEBUG",
             "handlers": ["console_handler", "error_file_handler"]
         },
-        "uvicorn.access": {
-            "handlers": ["access_file_handler"],
-            "level": "INFO",
-            "propagate": False,
-        },
-        "uvicorn.error": {
-            "handlers": ["error_file_handler"],
-            "level": "ERROR",
-            "propagate": False,
-        }
+        # "uvicorn.access": {
+        #     "handlers": ["console_handler", "access_file_handler"],
+        #     "level": "ERROR",
+        #     "propagate": False,
+        # },
+        # "uvicorn.error": {
+        #     "handlers": ["console_handler", "error_file_handler"],
+        #     "level": "ERROR",
+        #     "propagate": False,
+        # }
     }
 }

@@ -5,14 +5,16 @@ import asyncio
 import os
 
 import aiofiles
-from sqlalchemy import delete, func
+from sqlalchemy import delete, func, desc
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy.future import select
-from sqlalchemy.orm import selectinload, joinedload, subqueryload
+from sqlalchemy.orm import selectinload, joinedload, subqueryload, aliased, \
+    contains_eager
 from fastapi import UploadFile
 
 from models import User, Follower, Tweet, Media, Like, MEDIA_PATH
 from schemas import CreateUserModel, CreateTweetModelIn
+from profiler import profile
 
 logger = logging.getLogger("main.crud")
 
@@ -94,6 +96,19 @@ async def create_media(
     return medias
 
 
+async def get_user_test(session: AsyncSession, user_id):
+    statement = select(User).where(User.user_id == user_id)
+    statement = statement.options(
+        selectinload(User.followers),
+        selectinload(User.following),
+    )
+
+    user = await session.scalars(statement)
+
+    # await asyncio.sleep(0.1)
+    return user.one_or_none()
+
+
 async def read_user(
         session: AsyncSession,
         user_id: int,
@@ -113,10 +128,12 @@ async def read_user(
             selectinload(User.followers),
             selectinload(User.following),
         )
+
     user = await session.scalars(statement)
     return user.one_or_none()
 
 
+@profile
 async def read_feed(
         session: AsyncSession,
         user_id: int,
@@ -125,22 +142,27 @@ async def read_feed(
     sub_query = select(Follower.user_id).where(Follower.follower_id == user_id)
     following_query = select(User.user_id).where(User.user_id.in_(sub_query))
 
+    aliased_likes = aliased(Like)
+
     tweets = await session.scalars(
         select(
-            Tweet, func.count(Like.user_id).over(partition_by=Tweet.tweet_id)
+            Tweet,
+            func.count(Tweet.likes.of_type(aliased_likes))
+            .over(partition_by=Tweet.tweet_id).label("like_count")
         )
         .where(Tweet.author_id.in_(following_query))
+        .outerjoin(Tweet.likes.of_type(aliased_likes))
         .options(
-            joinedload(Tweet.likes).subqueryload(Like.user),
+            contains_eager(Tweet.likes.of_type(aliased_likes))
+            .joinedload(aliased_likes.user),
             selectinload(Tweet.author),
-            selectinload(Tweet.attachments)
+            selectinload(Tweet.attachments),
         )
         .order_by(
-            func.count(Like.user_id).over(partition_by=Tweet.tweet_id).desc()
+            desc("like_count")
         )
     )
-    # Проблема с оконной функцией (или сортировкой)
-    # если нет ни одного лайка у твитов в результирующем списке
+
     return tweets.unique().all()
     # ---------------------------------------
     # limits and offsets

@@ -4,7 +4,7 @@ from typing import List
 
 from fastapi import FastAPI, status, HTTPException, UploadFile, Depends, Request
 from fastapi.encoders import jsonable_encoder
-from fastapi.responses import JSONResponse, StreamingResponse
+from fastapi.responses import JSONResponse
 from fastapi.exceptions import RequestValidationError
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy.exc import IntegrityError
@@ -28,17 +28,18 @@ from utils import (
 )
 import custom_exceptions
 import crud
-from config import DEBUG
+from config import DEBUG, TESTING
 from logger import init_logger
-from database import async_session
+from main import app
 
 test_session = async_session()
 
-init_logger()
+if not TESTING:
+    init_logger()
 
 logger = logging.getLogger("main.routes")
 
-app = FastAPI()
+# app = FastAPI()
 
 storage = dict()
 
@@ -48,7 +49,7 @@ logger.info("Application started.")
 
 
 @app.get("/api/test/{user_id}")
-async def test(user_id: int):
+async def get_usr_test(user_id: int):
     user = await crud.get_user_test(test_session, user_id)
     return user
 

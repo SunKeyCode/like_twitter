@@ -4,7 +4,7 @@ from datetime import datetime, date
 from typing import List
 
 from sqlalchemy import (
-    Column, Integer, String, Sequence, Date, ForeignKey, Identity
+    Column, Integer, String, Date, ForeignKey, Identity
 )
 from sqlalchemy.orm import relationship, Mapped, selectinload, joinedload
 from sqlalchemy.future import select
@@ -58,7 +58,7 @@ class User(Base):
 class Tweet(Base):
     __tablename__ = "table_tweets"
 
-    tweet_id: int = Column(Integer, Sequence("tweet_id"), primary_key=True)
+    tweet_id: int = Column(Integer, Identity(always=True), primary_key=True)
     author_id: int = Column(ForeignKey("table_users.user_id"), nullable=False)
     content: str = Column(String, nullable=False)
     # добавить дату и время добавления твита,
@@ -116,7 +116,7 @@ class Like(Base):
 class Media(Base):
     __tablename__ = "table_media"
 
-    media_id: int = Column(Integer, Sequence("media_id"), primary_key=True)
+    media_id: int = Column(Integer, Identity(always=True), primary_key=True)
     name: str = Column(String, nullable=False)
     path: str = Column(String, default=MEDIA_PATH.format(user="unknown_user"))
 

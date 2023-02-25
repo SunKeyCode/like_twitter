@@ -30,10 +30,18 @@ async def create_user(session: AsyncSession, user_data: CreateUserModel):
 async def create_tweet(
         session: AsyncSession,
         tweet_data: CreateTweetModelIn,
+        author: int | User
 ):
     tweet_as_dict = tweet_data.dict()
     tweet_media_ids = tweet_as_dict.pop("tweet_media_ids")
     tweet = Tweet(**tweet_as_dict)
+
+    if isinstance(author, int):
+        tweet.author_id = author
+    elif isinstance(author, User):
+        tweet.author_id = author.user_id
+    else:
+        raise TypeError
 
     async with session.begin():
         if tweet_media_ids:
@@ -128,12 +136,21 @@ async def read_user(
             selectinload(User.followers),
             selectinload(User.following),
         )
-
-    user = await session.scalars(statement)
+    async with session.begin():
+        user = await session.scalars(statement)
     return user.one_or_none()
 
 
-@profile
+async def read_user_by_auth_data(session: AsyncSession, user_name: str, password: str):
+    async with session.begin():
+        user = await session.scalars(
+            select(User)
+            .where(User.user_name == user_name, User.hashed_password == password)
+        )
+
+    return user.one_or_none()
+
+
 async def read_feed(
         session: AsyncSession,
         user_id: int,

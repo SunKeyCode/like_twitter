@@ -64,7 +64,6 @@ class TweetBaseModel(BaseModel):
 
 
 class CreateTweetModelIn(TweetBaseModel):
-    author_id: int
     tweet_media_ids: List[int] = []
 
 

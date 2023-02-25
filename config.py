@@ -1,2 +1,2 @@
 DEBUG = True
-TESTING = True
+TESTING = False

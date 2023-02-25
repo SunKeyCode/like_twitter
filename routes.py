@@ -1,17 +1,18 @@
 import logging
-import time
 from typing import List
+from datetime import datetime, timedelta
 
 from fastapi import FastAPI, status, HTTPException, UploadFile, Depends, Request
 from fastapi.encoders import jsonable_encoder
 from fastapi.responses import JSONResponse
 from fastapi.exceptions import RequestValidationError
+from fastapi.security import OAuth2PasswordBearer, OAuth2PasswordRequestForm
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy.exc import IntegrityError
 from sqlalchemy.orm.exc import FlushError
 from logging_tree import printout
 
-from models import Tweet
+from models import Tweet, create_all
 from database import async_session, async_engine
 from schemas import (
     CreateUserModel,
@@ -32,8 +33,6 @@ from config import DEBUG, TESTING
 from logger import init_logger
 from main import app
 
-test_session = async_session()
-
 if not TESTING:
     init_logger()
 
@@ -43,15 +42,9 @@ logger = logging.getLogger("main.routes")
 
 storage = dict()
 
-# printout()
-
 logger.info("Application started.")
 
-
-@app.get("/api/test/{user_id}")
-async def get_usr_test(user_id: int):
-    user = await crud.get_user_test(test_session, user_id)
-    return user
+oauth2_scheme = OAuth2PasswordBearer(tokenUrl="/api/auth")
 
 
 async def get_db_session():
@@ -64,6 +57,37 @@ async def get_db_session():
         raise HTTPException(
             status_code=status.HTTP_404_NOT_FOUND, detail=exc.args
         )
+
+
+async def get_current_user(token: str = Depends(oauth2_scheme),
+                           session: AsyncSession = Depends(get_db_session),
+                           include_relation: str | None = None):
+    if token in storage and storage[token]["exp_date"] > datetime.now():
+        user_id = storage[token]["user_id"]  # получить user_id из токена
+        user = await crud.read_user(
+            session=session,
+            include_relations=include_relation,
+            user_id=int(user_id)
+        )
+        # await session.commit()
+        return user
+    else:
+        return None
+
+
+@app.exception_handler(HTTPException)
+async def http_exceptions_handler(request, exc: HTTPException):
+    print(request)
+    return JSONResponse(
+        status_code=exc.status_code,
+        content=jsonable_encoder(
+            {
+                "result": False,
+                "error_type": "http_exception",
+                "error_message": exc.detail,
+            }
+        )
+    )
 
 
 @app.exception_handler(custom_exceptions.NoUserFoundError)
@@ -129,14 +153,41 @@ async def unexpected_error_handler(_, exc: Exception):
 @app.on_event("startup")
 async def startup():
     async with async_session() as session:
+        if TESTING:
+            await create_all()
         storage["current_user"] = await crud.read_user(user_id=1, session=session)
         logger.debug(f"current_user={storage['current_user']}")
 
 
 @app.on_event("shutdown")
 async def shutdown():
-    await test_session.close()
     await async_engine.dispose()
+
+
+@app.post("/api/auth")
+async def login(form_data: OAuth2PasswordRequestForm = Depends(),
+                session: AsyncSession = Depends(get_db_session)):
+    user = await crud.read_user_by_auth_data(
+        session=session, user_name=form_data.username, password=form_data.password
+    )
+    if user:
+        storage[str(user.user_id)] = {
+            "user_id": user.user_id,
+            "exp_date": datetime.now() + timedelta(minutes=10)
+        }
+        return {"access_token": user.user_id, "token_type": "bearer"}
+    return False
+
+
+@app.get("/api/users/me")
+async def show_me(curren_user=Depends(get_current_user)):
+    if curren_user:
+        return reformat_any_response(key="user", value=curren_user)
+    else:
+        raise HTTPException(
+            status_code=status.HTTP_401_UNAUTHORIZED,
+            detail="User not authenticated"
+        )
 
 
 @app.get("/api/users/{user_id}", response_model=UserMainResponseModelBrief,
@@ -161,12 +212,29 @@ async def create_user(
     return reformat_any_response(user.user_id, "user_id")
 
 
-@app.post("/api/tweets", tags=["tweets"], description="Creates new tweet",
-          response_model=CreateTweetModelOut)
+@app.post(
+    "/api/tweets",
+    tags=["tweets"],
+    description="Creates new tweet",
+    response_model=CreateTweetModelOut,
+    status_code=status.HTTP_201_CREATED
+)
 async def create_tweet(
-        tweet_data: CreateTweetModelIn, session: AsyncSession = Depends(get_db_session)
+        tweet_data: CreateTweetModelIn,
+        session: AsyncSession = Depends(get_db_session),
+        current_user=Depends(get_current_user)
 ):
-    tweet = await crud.create_tweet(session=session, tweet_data=tweet_data)
+    if not current_user:
+        raise HTTPException(
+            status_code=status.HTTP_401_UNAUTHORIZED,
+            detail={"You are not authenticated user"}
+        )
+
+    tweet = await crud.create_tweet(
+        session=session,
+        tweet_data=tweet_data,
+        author=current_user
+    )
     return reformat_any_response(key="tweet_id", value=tweet.tweet_id)
 
 
@@ -204,7 +272,11 @@ async def get_feed(session: AsyncSession = Depends(get_db_session)):
     )
 
 
-@app.post("/api/tweets/{tweet_id}/likes", description="Add like to tweet")
+@app.post(
+    "/api/tweets/{tweet_id}/likes",
+    description="Add like to tweet",
+    status_code=status.HTTP_201_CREATED
+)
 async def add_like(tweet_id: int, session: AsyncSession = Depends(get_db_session)):
     user = storage["current_user"]
     await crud.create_like(session=session, tweet_id=tweet_id, user_id=user.user_id)
@@ -218,8 +290,8 @@ async def delete_like(tweet_id: int, session: AsyncSession = Depends(get_db_sess
     return {"result": True}
 
 
-@app.post("/api/medias")
-async def add_medias(
+@app.post("/api/medias", status_code=status.HTTP_201_CREATED)
+async def create_medias(
         files: List[UploadFile], session: AsyncSession = Depends(get_db_session)
 ):
     user = storage["current_user"]

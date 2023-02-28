@@ -1,7 +1,6 @@
 from typing import Union, List
 from datetime import datetime
 import logging
-import asyncio
 import os
 
 import aiofiles
@@ -14,7 +13,6 @@ from fastapi import UploadFile
 
 from models import User, Follower, Tweet, Media, Like, MEDIA_PATH
 from schemas import CreateUserModel, CreateTweetModelIn
-from profiler import profile
 
 logger = logging.getLogger("main.crud")
 
@@ -102,19 +100,6 @@ async def create_media(
         session.add_all(medias)
 
     return medias
-
-
-async def get_user_test(session: AsyncSession, user_id):
-    statement = select(User).where(User.user_id == user_id)
-    statement = statement.options(
-        selectinload(User.followers),
-        selectinload(User.following),
-    )
-
-    user = await session.scalars(statement)
-
-    # await asyncio.sleep(0.1)
-    return user.one_or_none()
 
 
 async def read_user(

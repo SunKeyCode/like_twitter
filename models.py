@@ -6,14 +6,13 @@ from typing import List
 from sqlalchemy import (
     Column, Integer, String, Date, ForeignKey, Identity
 )
-from sqlalchemy.orm import relationship, Mapped, selectinload, joinedload
-from sqlalchemy.future import select
+from sqlalchemy.orm import relationship, Mapped
 from sqlalchemy.ext.asyncio import AsyncSession, async_sessionmaker
 from sqlalchemy.orm import DeclarativeBase
 
 from database import async_session, async_engine
 
-from config import TESTING
+from configs.config import TESTING
 
 logger = logging.getLogger("main.models")
 MEDIA_PATH = "static/images/{user}/"
@@ -155,7 +154,7 @@ async def create_all():
     async with async_engine.begin() as conn:
         await conn.run_sync(Base.metadata.drop_all)
         await conn.run_sync(Base.metadata.create_all)
-    if not TESTING:
+    if TESTING == "False":
         await create_test_data(async_session)
 
 

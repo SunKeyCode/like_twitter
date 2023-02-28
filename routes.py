@@ -1,8 +1,9 @@
 import logging
+import pathlib
 from typing import List
 from datetime import datetime, timedelta
 
-from fastapi import FastAPI, status, HTTPException, UploadFile, Depends, Request
+from fastapi import status, HTTPException, UploadFile, Depends
 from fastapi.encoders import jsonable_encoder
 from fastapi.responses import JSONResponse
 from fastapi.exceptions import RequestValidationError
@@ -10,9 +11,8 @@ from fastapi.security import OAuth2PasswordBearer, OAuth2PasswordRequestForm
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy.exc import IntegrityError
 from sqlalchemy.orm.exc import FlushError
-from logging_tree import printout
 
-from models import Tweet, create_all
+from models import Tweet, create_all, User
 from database import async_session, async_engine
 from schemas import (
     CreateUserModel,
@@ -25,15 +25,14 @@ from utils import (
     reformat_tweet_response,
     reformat_response_iterable,
     reformat_any_response,
-    reformat_error,
 )
 import custom_exceptions
 import crud
-from config import DEBUG, TESTING
+from configs.config import DEBUG, TESTING
 from logger import init_logger
 from main import app
 
-if not TESTING:
+if TESTING != "True":
     init_logger()
 
 logger = logging.getLogger("main.routes")
@@ -42,7 +41,7 @@ logger = logging.getLogger("main.routes")
 
 storage = dict()
 
-logger.info("Application started.")
+logger.info(f"Application started at {pathlib.Path.cwd()}")
 
 oauth2_scheme = OAuth2PasswordBearer(tokenUrl="/api/auth")
 
@@ -69,7 +68,6 @@ async def get_current_user(token: str = Depends(oauth2_scheme),
             include_relations=include_relation,
             user_id=int(user_id)
         )
-        # await session.commit()
         return user
     else:
         return None
@@ -153,7 +151,7 @@ async def unexpected_error_handler(_, exc: Exception):
 @app.on_event("startup")
 async def startup():
     async with async_session() as session:
-        if TESTING:
+        if TESTING == 'True':
             await create_all()
         storage["current_user"] = await crud.read_user(user_id=1, session=session)
         logger.debug(f"current_user={storage['current_user']}")
@@ -239,11 +237,21 @@ async def create_tweet(
 
 
 @app.delete("/api/tweets/{tweet_id}", tags=["tweets"])
-async def delete_tweet(tweet_id: int, session: AsyncSession = Depends(get_db_session)):
-    user = storage["current_user"]
-    await crud.delete_tweet(
-        session=session, tweet_id=tweet_id, user_id=user.user_id
+async def delete_tweet(
+        tweet_id: int,
+        session: AsyncSession = Depends(get_db_session),
+        current_user: User = Depends(get_current_user)
+):
+    result = await crud.delete_tweet(
+        session=session, tweet_id=tweet_id, user_id=current_user.user_id
     )
+    if result:
+        return {"result": result}
+    else:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail="Tweet does not exists or belongs another user"
+        )
 
 
 @app.get("/api/tweets/{tweet_id}", response_model=MainTweetResponseModel,

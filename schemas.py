@@ -27,6 +27,7 @@ class BriefInfoUserModel(UserBaseModel):
 class CreateUserModel(UserBaseModel):
     first_name: str | None = None
     last_name: str | None = None
+    hashed_password: str
 
 
 class UserInfoModel(BriefInfoUserModel):

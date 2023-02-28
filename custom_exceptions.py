@@ -1,6 +1,6 @@
 import re
 
-import config
+from configs import config
 
 
 class DbIntegrityError(Exception):

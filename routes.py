@@ -35,7 +35,7 @@ from main import app
 if TESTING != "True":
     init_logger()
 
-logger = logging.getLogger("main.routes")
+logger = logging.getLogger("main.routes_")
 
 # app = FastAPI()
 
@@ -58,24 +58,36 @@ async def get_db_session():
         )
 
 
-async def get_current_user(token: str = Depends(oauth2_scheme),
-                           session: AsyncSession = Depends(get_db_session),
+# async def _get_current_user(token: str = Depends(oauth2_scheme),
+#                             session: AsyncSession = Depends(get_db_session),
+#                             include_relation: str | None = None):
+#     if token in storage and storage[token]["exp_date"] > datetime.now():
+#         # user_id = storage[token]["user_id"]  # получить user_id из токена
+#         user_id = 1
+#         user = await crud.read_user(
+#             session=session,
+#             include_relations=include_relation,
+#             user_id=int(user_id)
+#         )
+#         return user
+#     else:
+#         return None
+
+
+# для тестов
+async def get_current_user(session: AsyncSession = Depends(get_db_session),
                            include_relation: str | None = None):
-    if token in storage and storage[token]["exp_date"] > datetime.now():
-        user_id = storage[token]["user_id"]  # получить user_id из токена
-        user = await crud.read_user(
-            session=session,
-            include_relations=include_relation,
-            user_id=int(user_id)
-        )
-        return user
-    else:
-        return None
+    user_id = 1
+    user = await crud.read_user(
+        session=session,
+        include_relations=include_relation,
+        user_id=int(user_id)
+    )
+    return user
 
 
 @app.exception_handler(HTTPException)
 async def http_exceptions_handler(request, exc: HTTPException):
-    print(request)
     return JSONResponse(
         status_code=exc.status_code,
         content=jsonable_encoder(
@@ -178,6 +190,7 @@ async def login(form_data: OAuth2PasswordRequestForm = Depends(),
 
 
 @app.get("/api/users/me")
+# async def show_me(curren_user=Depends(get_current_user)):
 async def show_me(curren_user=Depends(get_current_user)):
     if curren_user:
         return reformat_any_response(key="user", value=curren_user)

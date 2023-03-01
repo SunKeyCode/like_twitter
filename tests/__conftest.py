@@ -7,7 +7,7 @@ from sqlalchemy.ext.asyncio import create_async_engine, async_sessionmaker
 from sqlalchemy import create_engine
 from sqlalchemy.exc import IntegrityError
 
-from routes import app, get_db_session
+from routes_ import app, get_db_session
 import custom_exceptions
 from models import Base
 

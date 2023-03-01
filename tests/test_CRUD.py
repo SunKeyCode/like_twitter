@@ -2,9 +2,9 @@ import pytest
 
 from sqlalchemy.exc import IntegrityError
 
-import crud
+import _crud
 from fake_factory import UserFactory
-from schemas import CreateUserModel
+from _schemas import CreateUserModel
 from sqlalchemy.ext.asyncio import AsyncSession
 
 pytestmark = pytest.mark.asyncio

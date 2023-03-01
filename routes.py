@@ -3,7 +3,7 @@ import pathlib
 from typing import List
 from datetime import datetime, timedelta
 
-from fastapi import status, HTTPException, UploadFile, Depends
+from fastapi import status, HTTPException, UploadFile, Depends, FastAPI
 from fastapi.encoders import jsonable_encoder
 from fastapi.responses import JSONResponse
 from fastapi.exceptions import RequestValidationError
@@ -14,7 +14,7 @@ from sqlalchemy.orm.exc import FlushError
 
 from models import Tweet, create_all, User
 from database import async_session, async_engine
-from schemas import (
+from _schemas import (
     CreateUserModel,
     CreateTweetModelIn,
     UserMainResponseModelBrief,
@@ -27,17 +27,16 @@ from utils import (
     reformat_any_response,
 )
 import custom_exceptions
-import crud
+import _crud
 from configs.config import DEBUG, TESTING
 from logger import init_logger
-from main import app
 
 if TESTING != "True":
     init_logger()
 
 logger = logging.getLogger("main.routes_")
 
-# app = FastAPI()
+app = FastAPI()
 
 storage = dict()
 

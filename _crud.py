@@ -12,7 +12,7 @@ from sqlalchemy.orm import selectinload, joinedload, subqueryload, aliased, \
 from fastapi import UploadFile
 
 from models import User, Follower, Tweet, Media, Like, MEDIA_PATH
-from schemas import CreateUserModel, CreateTweetModelIn
+from _schemas import CreateUserModel, CreateTweetModelIn
 
 logger = logging.getLogger("main.crud")
 

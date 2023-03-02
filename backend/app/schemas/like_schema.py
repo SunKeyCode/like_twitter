@@ -1,4 +1,4 @@
-from pydantic import BaseModel
+from pydantic import BaseModel, Field
 
 
 class LikeBaseModel(BaseModel):
@@ -7,7 +7,7 @@ class LikeBaseModel(BaseModel):
 
 class LikeForTweetModel(LikeBaseModel):
     user_id: int
-    user_name: str
+    name: str
 
     class Config:
         orm_mode = True

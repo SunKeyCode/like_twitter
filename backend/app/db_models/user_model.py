@@ -27,13 +27,15 @@ class User(Base):
         primaryjoin=user_id == Follower.user_id,
         secondaryjoin=user_id == Follower.follower_id,
         viewonly=True,
+        # lazy="noload"
     )
 
     following: Mapped[List["User"]] = relationship(
         secondary="table_followers",
         primaryjoin=user_id == Follower.follower_id,
         secondaryjoin=user_id == Follower.user_id,
-        viewonly=True
+        viewonly=True,
+        # lazy="noload"
     )
 
     def __repr__(self):

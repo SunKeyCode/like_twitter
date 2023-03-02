@@ -1,4 +1,5 @@
 import os
+import pathlib
 from datetime import datetime
 from typing import List
 
@@ -8,16 +9,23 @@ from sqlalchemy.ext.asyncio import AsyncSession
 
 from db_models.media_model import Media
 
+# IMAGES_PATH = pathlib.Path().absolute().parents[1].as_posix() + "/static/images/{user}/"
+IMAGES_PATH = pathlib.Path().absolute().parents[1].as_posix() + "/static"
+
+
+# LINK =
 
 async def create_media(
         session: AsyncSession,
         files: List[UploadFile],
         user_id: int
 ):
-    path = MEDIA_PATH.format(user=user_id)
+    link = "/images/{user}".format(user=user_id)
 
-    if not os.path.exists(path):
-        os.mkdir(path)
+    # path = IMAGES_PATH.format(user=user_id)
+
+    if not os.path.exists(IMAGES_PATH + link):
+        os.mkdir(IMAGES_PATH + link)
         # logger.debug(f"Created path: {path}")
 
     medias = []
@@ -28,17 +36,20 @@ async def create_media(
         # from werkzeug.utils import secure_filename
         # или написать свой вариант
         new_filename = "{:.4f}_{}".format(timestamp, file.filename)
+        link = "".join([link, new_filename])
 
         content = await file.read()
         async with aiofiles.open(
                 file="".join(
-                    [MEDIA_PATH.format(user=user_id), new_filename]
+                    # [IMAGES_PATH.format(user=user_id), new_filename]
+                    [IMAGES_PATH, link]
                 ),
                 mode="wb"
         ) as file_to_write:
             await file_to_write.write(content)
 
-        media = Media(name=new_filename, path=path)
+        # media = Media(name=new_filename, path=path)
+        media = Media(link=link)
         medias.append(media)
 
     async with session.begin():

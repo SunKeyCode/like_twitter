@@ -1,4 +1,4 @@
-from pydantic import BaseModel, Field
+from pydantic import BaseModel, Field, validator
 from typing import List
 
 from schemas import user_schema, media_schema, like_schema
@@ -8,7 +8,8 @@ class TweetBaseModel(BaseModel):
     content: str
 
 
-class CreateTweetModelIn(TweetBaseModel):
+class CreateTweetModelIn(BaseModel):
+    content: str = Field(alias="tweet_data")
     tweet_media_ids: List[int] = []
 
 
@@ -21,10 +22,14 @@ class CreateTweetModelOut(BaseModel):
 
 
 class TweetFullInfoModel(TweetBaseModel):
-    tweet_id: int
+    id: int = Field(alias="tweet_id")
     author: user_schema.BriefInfoUserModel
     likes: List[like_schema.LikeForTweetModel] | None = []
     attachments: List[media_schema.AttachmentModel]
+
+    @validator("attachments")
+    def extract_link(cls, attachments: List[media_schema.AttachmentModel]):
+        return [attachment.link for attachment in attachments]
 
     class Config:
         orm_mode = True

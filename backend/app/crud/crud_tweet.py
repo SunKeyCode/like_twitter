@@ -70,7 +70,7 @@ async def read_feed(
             desc("like_count")
         )
     )
-
+    await session.commit()
     return tweets.unique().all()
     # ---------------------------------------
     # limits and offsets

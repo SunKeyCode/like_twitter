@@ -39,8 +39,10 @@ async def get_db_session():
 
 
 # для тестов
-async def get_current_user_by_apikey(session: AsyncSession = Depends(get_db_session),
-                                     include_relation: str | None = None):
+async def get_current_user_by_apikey(
+        session: AsyncSession = Depends(get_db_session),
+        include_relation: str | None = None
+):
     user_id = 1
     user = await crud_user.read_user(
         session=session,

@@ -3,7 +3,7 @@ from typing import List
 
 
 class UserBaseModel(BaseModel):
-    user_name: str
+    user: str = Field(alias="user_name")
 
 
 class CreateUserModel(UserBaseModel):
@@ -13,7 +13,7 @@ class CreateUserModel(UserBaseModel):
 
 
 class BriefInfoUserModel(UserBaseModel):
-    user_id: int
+    id: int = Field(alias="user_id")
 
     class Config:
         orm_mode = True

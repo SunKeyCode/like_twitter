@@ -10,10 +10,22 @@ from custom_exc.no_user_found import NoUserFoundError
 router = APIRouter(prefix="/users")
 
 
-@router.get("/me")
-async def show_me(curren_user: User = Depends(dependencies.get_current_user_by_apikey)):
+@router.get(
+    "/me",
+    response_model=user_schema.UserMainResponseModel,
+    response_model_by_alias=False,
+)
+async def show_me(
+        session: AsyncSession = Depends(dependencies.get_db_session),
+        curren_user: User = Depends(dependencies.get_current_user_by_apikey)
+):
     if curren_user:
-        return utils.reformat_any_response(key="user", value=curren_user)
+        user = await crud_user.read_user(
+            session=session,
+            user_id=curren_user.user_id,
+            include_relations="all"
+        )
+        return utils.reformat_any_response(key="user", value=user)
     else:
         raise HTTPException(
             status_code=status.HTTP_401_UNAUTHORIZED,
@@ -21,14 +33,19 @@ async def show_me(curren_user: User = Depends(dependencies.get_current_user_by_a
         )
 
 
-@router.get("/{user_id}", response_model=user_schema.UserMainResponseModel)
+@router.get(
+    "/{user_id}",
+    response_model=user_schema.UserMainResponseModel,
+    response_model_by_alias=False
+)
 async def get_user(
         user_id: int,
         session: AsyncSession = Depends(dependencies.get_db_session)
 ):
-    user = await crud_user.read_user(
+    user: User = await crud_user.read_user(
         session=session, user_id=user_id, include_relations="all"
     )
+
     if user:
         return utils.reformat_any_response(user, "user")
     else:

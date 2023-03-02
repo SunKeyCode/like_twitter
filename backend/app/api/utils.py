@@ -10,7 +10,7 @@ def reformat_tweet_response(tweet: dict | None) -> dict | None:
         while likes:
             like: dict = likes.pop()
             user: dict | None = like.pop("user")
-            like["user_name"] = user["user_name"]
+            like["name"] = user["user_name"]
             new_likes.append(like)
 
         tweet["likes"] = new_likes

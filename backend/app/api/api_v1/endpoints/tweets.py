@@ -1,4 +1,4 @@
-from fastapi import APIRouter, Depends, status, HTTPException
+from fastapi import APIRouter, Depends, status, HTTPException, Request
 from fastapi.encoders import jsonable_encoder
 from sqlalchemy.ext.asyncio import AsyncSession
 
@@ -10,6 +10,13 @@ from crud import crud_tweet
 router = APIRouter(prefix="/tweets", )
 
 
+# @router.post("/", )
+# async def req_test(req: Request, ):
+#     print(req.headers)
+#     boby = await req.json()
+#     print(boby)
+
+
 @router.post(
     "/",
     description="Creates new tweet",
@@ -17,6 +24,7 @@ router = APIRouter(prefix="/tweets", )
     status_code=status.HTTP_201_CREATED
 )
 async def create_tweet(
+
         tweet_data: tweet_schema.CreateTweetModelIn,
         session: AsyncSession = Depends(dependencies.get_db_session),
         current_user: User = Depends(dependencies.get_current_user_by_apikey)
@@ -32,6 +40,7 @@ async def create_tweet(
         tweet_data=tweet_data,
         author=current_user
     )
+
     return utils.reformat_any_response(key="tweet_id", value=tweet.tweet_id)
 
 
@@ -53,7 +62,11 @@ async def delete_tweet(
         )
 
 
-@router.get("/", response_model=tweet_schema.TweetsResponseModel)
+@router.get(
+    "/",
+    response_model=tweet_schema.TweetsResponseModel,
+    response_model_by_alias=False
+)
 async def get_feed(
         session: AsyncSession = Depends(dependencies.get_db_session),
         current_user: User = Depends(dependencies.get_current_user_by_apikey)

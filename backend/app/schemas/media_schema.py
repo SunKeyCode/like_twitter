@@ -8,8 +8,6 @@ class MediaBasModel(BaseModel):
 
 
 class AttachmentModel(BaseModel):
-    # path: str
-    # name: str
     link: str
 
 

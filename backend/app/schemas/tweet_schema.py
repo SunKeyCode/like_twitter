@@ -24,8 +24,8 @@ class CreateTweetModelOut(BaseModel):
 class TweetFullInfoModel(TweetBaseModel):
     id: int = Field(alias="tweet_id")
     author: user_schema.BriefInfoUserModel
-    likes: List[like_schema.LikeForTweetModel] | None = []
-    attachments: List[media_schema.AttachmentModel]
+    likes: List[like_schema.LikeForTweetModel] = []
+    attachments: List[media_schema.AttachmentModel] = []
 
     @validator("attachments")
     def extract_link(cls, attachments: List[media_schema.AttachmentModel]):

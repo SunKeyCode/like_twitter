@@ -10,13 +10,7 @@ from crud import crud_tweet
 router = APIRouter(prefix="/tweets", )
 
 
-# @router.post("/", )
-# async def req_test(req: Request, ):
-#     print(req.headers)
-#     boby = await req.json()
-#     print(boby)
-
-
+# TODO во всех роутах проверить аутентификацию (current user is not None)
 @router.post(
     "/",
     description="Creates new tweet",
@@ -24,7 +18,6 @@ router = APIRouter(prefix="/tweets", )
     status_code=status.HTTP_201_CREATED
 )
 async def create_tweet(
-
         tweet_data: tweet_schema.CreateTweetModelIn,
         session: AsyncSession = Depends(dependencies.get_db_session),
         current_user: User = Depends(dependencies.get_current_user_by_apikey)
@@ -76,11 +69,7 @@ async def get_feed(
 
     tweets_as_json = map(jsonable_encoder, tweets_as_obj)
 
-    return utils.reformat_response_iterable(
-        tweets_as_json,
-        func=utils.reformat_tweet_response,
-        key_name="tweets"
-    )
+    return utils.reformat_any_response(key="tweets", value=list(tweets_as_json))
 
 
 @router.post(

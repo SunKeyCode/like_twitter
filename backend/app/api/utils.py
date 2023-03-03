@@ -1,6 +1,7 @@
 from typing import Any, Iterable, Callable, List
 
 
+# TODO удалить (устарел)
 def reformat_tweet_response(tweet: dict | None) -> dict | None:
     new_likes = []
     if tweet is None:
@@ -20,8 +21,12 @@ def reformat_tweet_response(tweet: dict | None) -> dict | None:
     return tweet
 
 
-def reformat_response_iterable(iterable: Iterable, func: Callable,
-                               key_name: str) -> dict:
+# TODO удалить (устарел)
+def reformat_response_iterable(
+        iterable: Iterable,
+        func: Callable,
+        key_name: str
+) -> dict:
     if isinstance(iterable, dict):
         return reformat_any_response(iterable, key_name)
 
@@ -47,7 +52,7 @@ def reformat_any_response(value: Any | List[Any], key: str | List[str] = None) -
         raise TypeError
 
 
-def reformat_error(exc: tuple):
+def reformat_error(exc: tuple) -> str:
     try:
         return exc[0][0]
     except IndexError:

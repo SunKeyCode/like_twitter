@@ -18,7 +18,7 @@ class User(Base):
     last_name: str = Column(String(50), nullable=True)
     reg_date: date = Column(Date, default=datetime.today)
 
-    # delete orphan???
+    # TODO проверить что будет с твитами при удалении пользователя
     tweets: Mapped[List["Tweet"]] = relationship(back_populates="author", lazy="raise")
 
     followers: Mapped[List["User"]] = relationship(
@@ -27,7 +27,7 @@ class User(Base):
         primaryjoin=user_id == Follower.user_id,
         secondaryjoin=user_id == Follower.follower_id,
         viewonly=True,
-        # lazy="noload"
+        lazy="raise"
     )
 
     following: Mapped[List["User"]] = relationship(
@@ -35,7 +35,7 @@ class User(Base):
         primaryjoin=user_id == Follower.follower_id,
         secondaryjoin=user_id == Follower.user_id,
         viewonly=True,
-        # lazy="noload"
+        lazy="raise"
     )
 
     def __repr__(self):

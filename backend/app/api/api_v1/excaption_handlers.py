@@ -73,7 +73,7 @@ async def unexpected_error_handler(_, exc: Exception):
             {
                 "result": False,
                 "error_type": "Exception",
-                "error_message": "Unexpected server error",
+                "error_message": "Internal server error",
             }
         )
     )

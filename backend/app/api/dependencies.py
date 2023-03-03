@@ -21,7 +21,7 @@ async def get_db_session():
             status_code=status.HTTP_404_NOT_FOUND, detail=exc.args[0]
         )
 
-
+# TODO добавить вариант авторизации с oauth2 или jwt
 # async def _get_current_user(token: str = Depends(oauth2_scheme),
 #                             session: AsyncSession = Depends(get_db_session),
 #                             include_relation: str | None = None):
@@ -38,11 +38,11 @@ async def get_db_session():
 #         return None
 
 
-# для тестов
 async def get_current_user_by_apikey(
         session: AsyncSession = Depends(get_db_session),
         include_relation: str | None = None
 ):
+    # TODO реализовать получение ключа из заголовка
     user_id = 1
     user = await crud_user.read_user(
         session=session,

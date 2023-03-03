@@ -6,6 +6,7 @@ from api.api_v1.routers import api_router
 from api.api_v1 import excaption_handlers
 from custom_exc.db_exception import DbIntegrityError
 from custom_exc.no_user_found import NoUserFoundError
+from api.api_v1 import middleware
 
 
 def create_app():
@@ -36,5 +37,7 @@ def create_app():
         exc_class_or_status_code=Exception,
         handler=excaption_handlers.unexpected_error_handler
     )
+
+    # app.add_middleware(middleware.LoggingRequestsAsJson)
 
     return app

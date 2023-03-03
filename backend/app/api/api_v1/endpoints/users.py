@@ -1,4 +1,4 @@
-from fastapi import APIRouter, Depends, status, HTTPException
+from fastapi import APIRouter, Depends, status, HTTPException, Header
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from api import dependencies, utils
@@ -17,7 +17,7 @@ router = APIRouter(prefix="/users")
 )
 async def show_me(
         session: AsyncSession = Depends(dependencies.get_db_session),
-        curren_user: User = Depends(dependencies.get_current_user_by_apikey)
+        curren_user: User = Depends(dependencies.get_curren_user),
 ):
     if curren_user:
         user = await crud_user.read_user(

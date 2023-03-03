@@ -12,7 +12,7 @@ class LikeForTweetModel(LikeBaseModel):
 
     @validator("name")
     def extract_user_name_value(cls, user_model: BriefInfoUserModel):
-        return user_model.user
+        return user_model.name
 
     class Config:
         orm_mode = True

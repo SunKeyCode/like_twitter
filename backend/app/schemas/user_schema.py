@@ -3,10 +3,11 @@ from typing import List
 
 
 class UserBaseModel(BaseModel):
-    user: str = Field(alias="user_name")
+    name: str = Field(alias="user_name")
 
 
-class CreateUserModel(UserBaseModel):
+class CreateUserModel(BaseModel):
+    user_name: str
     first_name: str | None = None
     last_name: str | None = None
     hashed_password: str

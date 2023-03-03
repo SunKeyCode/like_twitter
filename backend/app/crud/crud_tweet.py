@@ -43,8 +43,8 @@ async def create_tweet(
 async def read_feed(
         session: AsyncSession,
         user_id: int,
-        limit=0,
-        offset=0
+        offset=0,
+        limit=100,
 
 ):
     sub_query = select(Follower.user_id).where(Follower.follower_id == user_id)
@@ -68,7 +68,7 @@ async def read_feed(
         )
         .order_by(
             desc("like_count")
-        )
+        ).limit(limit).offset(offset)
     )
     await session.commit()
     return tweets.unique().all()

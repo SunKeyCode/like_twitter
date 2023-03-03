@@ -62,11 +62,17 @@ async def delete_tweet(
 )
 async def get_feed(
         session: AsyncSession = Depends(dependencies.get_db_session),
-        current_user: User = Depends(dependencies.get_current_user_by_apikey)
+        current_user: User = Depends(dependencies.get_current_user_by_apikey),
+        pagination: dict = Depends(dependencies.pagination)
 ):
     user = current_user
-    tweets_as_obj = await crud_tweet.read_feed(session=session, user_id=user.user_id)
+    tweets_as_obj = await crud_tweet.read_feed(
+        session=session,
+        user_id=user.user_id,
+        offset=0 if pagination.get("offset") is None else pagination["offset"],
+        limit=100 if pagination.get("limit") is None else pagination["limit"]
 
+    )
     tweets_as_json = map(jsonable_encoder, tweets_as_obj)
 
     return utils.reformat_any_response(key="tweets", value=list(tweets_as_json))

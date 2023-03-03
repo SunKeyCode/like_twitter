@@ -4,6 +4,7 @@ from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy.orm.exc import FlushError
 from starlette import status
 from starlette.exceptions import HTTPException
+from starlette.requests import Request
 
 from db.session import async_session
 from crud import crud_user
@@ -20,6 +21,7 @@ async def get_db_session():
         raise HTTPException(
             status_code=status.HTTP_404_NOT_FOUND, detail=exc.args[0]
         )
+
 
 # TODO добавить вариант авторизации с oauth2 или jwt
 # async def _get_current_user(token: str = Depends(oauth2_scheme),
@@ -39,14 +41,30 @@ async def get_db_session():
 
 
 async def get_current_user_by_apikey(
+        request: Request,
         session: AsyncSession = Depends(get_db_session),
-        include_relation: str | None = None
 ):
-    # TODO реализовать получение ключа из заголовка
-    user_id = 1
+    api_key = request.headers.mutablecopy().get("api-key")
+    if api_key is None:
+        raise HTTPException(
+            status_code=status.HTTP_401_UNAUTHORIZED,
+            detail="api-key is omitted"
+        )
+    if api_key == "test":
+        api_key = 1
+    # TODO хранить api-key в базе
+    user_id = api_key
     user = await crud_user.read_user(
         session=session,
-        include_relations=include_relation,
+        include_relations=None,
         user_id=int(user_id)
     )
     return user
+
+
+async def get_curren_user(curren_user=Depends(get_current_user_by_apikey)):
+    return curren_user
+
+
+async def pagination(offset: int | None = None, limit: int | None = None):
+    return {"offset": offset, "limit": limit}

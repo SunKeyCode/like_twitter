@@ -41,7 +41,9 @@ def reformat_response_iterable(
     return reformat_any_response(response, key_name)
 
 
-def reformat_any_response(value: Any | List[Any], key: str | List[str] = None) -> dict:
+def reformat_any_response(
+        value: Any | List[Any], key: str | List[str] = None
+) -> dict[str, Any]:
     if isinstance(key, list) and isinstance(value, list) and len(key) == len(value):
         key.append("result")
         value.append(True)

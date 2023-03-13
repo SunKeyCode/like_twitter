@@ -11,7 +11,7 @@ from sqlalchemy.ext.asyncio import AsyncSession, async_sessionmaker
 from sqlalchemy.orm import DeclarativeBase
 
 from database import async_session, async_engine
-from configs.config import TESTING
+from configs.app_config import TESTING
 
 logger = logging.getLogger("main.models")
 MEDIA_PATH = "static/images/{user}/"

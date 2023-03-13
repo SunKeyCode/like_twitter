@@ -2,7 +2,7 @@ from sqlalchemy.ext.asyncio import create_async_engine, async_sessionmaker
 from sqlalchemy.orm import DeclarativeBase
 import asyncpg
 
-import configs.config as config
+import configs.app_config as config
 
 
 async def creat_test_db():

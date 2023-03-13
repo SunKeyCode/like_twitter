@@ -1,3 +1,5 @@
+from typing import Any
+
 from fastapi import APIRouter, Depends, status, HTTPException, Request
 from fastapi.encoders import jsonable_encoder
 from sqlalchemy.ext.asyncio import AsyncSession
@@ -10,7 +12,6 @@ from crud import crud_tweet
 router = APIRouter(prefix="/tweets", )
 
 
-# TODO во всех роутах проверить аутентификацию (current user is not None)
 @router.post(
     "/",
     description="Creates new tweet",
@@ -21,7 +22,7 @@ async def create_tweet(
         tweet_data: tweet_schema.CreateTweetModelIn,
         session: AsyncSession = Depends(dependencies.get_db_session),
         current_user: User = Depends(dependencies.get_current_user_by_apikey)
-):
+) -> dict[str, Any]:
     if not current_user:
         raise HTTPException(
             status_code=status.HTTP_401_UNAUTHORIZED,
@@ -42,7 +43,7 @@ async def delete_tweet(
         tweet_id: int,
         session: AsyncSession = Depends(dependencies.get_db_session),
         current_user: User = Depends(dependencies.get_current_user_by_apikey)
-):
+) -> dict[str, Any]:
     result = await crud_tweet.delete_tweet(
         session=session, tweet_id=tweet_id, user_id=current_user.user_id
     )
@@ -64,8 +65,9 @@ async def get_feed(
         session: AsyncSession = Depends(dependencies.get_db_session),
         current_user: User = Depends(dependencies.get_current_user_by_apikey),
         pagination: dict = Depends(dependencies.pagination)
-):
+) -> dict[str, Any]:
     user = current_user
+
     tweets_as_obj = await crud_tweet.read_feed(
         session=session,
         user_id=user.user_id,
@@ -86,7 +88,7 @@ async def get_feed(
 async def add_like(
         tweet_id: int, session: AsyncSession = Depends(dependencies.get_db_session),
         current_user: User = Depends(dependencies.get_current_user_by_apikey)
-):
+) -> dict[str, Any]:
     user = current_user
     await crud_tweet.add_like(session=session, tweet_id=tweet_id, user_id=user.user_id)
     return {"result": True}
@@ -97,7 +99,7 @@ async def delete_like(
         tweet_id: int,
         session: AsyncSession = Depends(dependencies.get_db_session),
         current_user: User = Depends(dependencies.get_current_user_by_apikey)
-):
+) -> dict[str, Any]:
     user = current_user
     await crud_tweet.remove_like(
         session=session, tweet_id=tweet_id, user_id=user.user_id

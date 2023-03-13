@@ -1,3 +1,5 @@
+from typing import Any
+
 from fastapi import APIRouter, Depends, status, HTTPException, Header
 from sqlalchemy.ext.asyncio import AsyncSession
 
@@ -18,7 +20,7 @@ router = APIRouter(prefix="/users")
 async def show_me(
         session: AsyncSession = Depends(dependencies.get_db_session),
         curren_user: User = Depends(dependencies.get_curren_user),
-):
+) -> dict[str, Any]:
     if curren_user:
         user = await crud_user.read_user(
             session=session,
@@ -41,7 +43,7 @@ async def show_me(
 async def get_user(
         user_id: int,
         session: AsyncSession = Depends(dependencies.get_db_session)
-):
+) -> dict[str, Any]:
     user: User = await crud_user.read_user(
         session=session, user_id=user_id, include_relations="all"
     )
@@ -56,7 +58,7 @@ async def get_user(
 async def create_user(
         user_data: user_schema.CreateUserModel,
         session: AsyncSession = Depends(dependencies.get_db_session)
-):
+) -> dict[str, Any]:
     user = await crud_user.create_user(session=session, user_data=user_data)
 
     return utils.reformat_any_response(user.user_id, "user_id")
@@ -67,7 +69,7 @@ async def follow_user(
         user_id: int,
         session: AsyncSession = Depends(dependencies.get_db_session),
         curren_user: User = Depends(dependencies.get_current_user_by_apikey)
-):
+) -> dict[str, bool]:
     await crud_user.follow_user(
         session=session, user_who_follow=curren_user, user_id=user_id
     )
@@ -80,7 +82,7 @@ async def unfollow_user(
         user_id: int,
         session: AsyncSession = Depends(dependencies.get_db_session),
         curren_user: User = Depends(dependencies.get_current_user_by_apikey)
-):
+) -> dict[str, bool]:
     await crud_user.unfollow(
         session=session, user_who_unfollow=curren_user, user_id=user_id
     )

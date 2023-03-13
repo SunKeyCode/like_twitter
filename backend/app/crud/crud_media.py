@@ -9,20 +9,17 @@ from sqlalchemy.ext.asyncio import AsyncSession
 
 from db_models.media_model import Media
 
-# IMAGES_PATH = pathlib.Path().absolute().parents[1].as_posix() + "/static/images/{user}/"
 IMAGES_PATH = pathlib.Path().absolute().parents[1].as_posix() + "/static"
 
 
-# LINK =
+# TODO рассчитать путь до переменной и добавить ее в configs
 
 async def create_media(
         session: AsyncSession,
         files: List[UploadFile],
         user_id: int
-):
-    link = "/images/{user}".format(user=user_id)
-
-    # path = IMAGES_PATH.format(user=user_id)
+) -> list[Media]:
+    link = "/images/{user}/".format(user=user_id)
 
     if not os.path.exists(IMAGES_PATH + link):
         os.mkdir(IMAGES_PATH + link)
@@ -37,18 +34,16 @@ async def create_media(
         # или написать свой вариант
         new_filename = "{:.4f}_{}".format(timestamp, file.filename)
         link = "".join([link, new_filename])
-
+        print(link)
         content = await file.read()
         async with aiofiles.open(
                 file="".join(
-                    # [IMAGES_PATH.format(user=user_id), new_filename]
                     [IMAGES_PATH, link]
                 ),
                 mode="wb"
         ) as file_to_write:
             await file_to_write.write(content)
 
-        # media = Media(name=new_filename, path=path)
         media = Media(link=link)
         medias.append(media)
 

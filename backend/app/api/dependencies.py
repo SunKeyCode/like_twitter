@@ -6,6 +6,8 @@ from starlette import status
 from starlette.exceptions import HTTPException
 from starlette.requests import Request
 
+from custom_exc.no_user_found import NoUserFoundError
+from db_models.user_model import User
 from db.session import async_session
 from crud import crud_user
 from custom_exc.db_exception import DbIntegrityError
@@ -43,7 +45,7 @@ async def get_db_session():
 async def get_current_user_by_apikey(
         request: Request,
         session: AsyncSession = Depends(get_db_session),
-):
+) -> User:
     api_key = request.headers.mutablecopy().get("api-key")
     if api_key is None:
         raise HTTPException(
@@ -54,17 +56,23 @@ async def get_current_user_by_apikey(
         api_key = 1
     # TODO хранить api-key в базе
     user_id = api_key
-    user = await crud_user.read_user(
+    user: User = await crud_user.read_user(
         session=session,
         include_relations=None,
         user_id=int(user_id)
     )
+
+    if user is None:
+        raise NoUserFoundError
+
     return user
 
 
-async def get_curren_user(curren_user=Depends(get_current_user_by_apikey)):
+async def get_curren_user(curren_user=Depends(get_current_user_by_apikey)) -> User:
     return curren_user
 
 
-async def pagination(offset: int | None = None, limit: int | None = None):
+async def pagination(
+        offset: int | None = None, limit: int | None = None
+) -> dict[str, int]:
     return {"offset": offset, "limit": limit}

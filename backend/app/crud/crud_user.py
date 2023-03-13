@@ -13,7 +13,7 @@ from schemas.user_schema import CreateUserModel
 logger = logging.getLogger("main.crud")
 
 
-async def create_user(session: AsyncSession, user_data: CreateUserModel):
+async def create_user(session: AsyncSession, user_data: CreateUserModel) -> User:
     user = User(**user_data.dict())
     async with session.begin():
         session.add(user)
@@ -25,7 +25,7 @@ async def read_user(
         session: AsyncSession,
         user_id: int,
         include_relations: str = None,
-):
+) -> User:
     statement = select(User).where(User.user_id == user_id)
     if include_relations == "followers":
         statement = statement.options(
@@ -45,11 +45,36 @@ async def read_user(
     return user.one_or_none()
 
 
+async def read_all(
+        session: AsyncSession,
+        include_relations: str = None,
+) -> list[User]:
+    statement = select(User)
+
+    if include_relations == "followers":
+        statement = statement.options(
+            selectinload(User.followers),
+        )
+    elif include_relations == "following":
+        statement = statement.options(
+            selectinload(User.following),
+        )
+    elif include_relations == "all":
+        statement = statement.options(
+            selectinload(User.followers),
+            selectinload(User.following),
+        )
+
+    async with session.begin():
+        user = await session.scalars(statement)
+    return user.all()
+
+
 async def follow_user(
         session: AsyncSession,
         user_who_follow: Union[User, int],
         user_id: int
-):
+) -> None:
     if isinstance(user_who_follow, User):
         who_fallow_id = user_who_follow.user_id
     elif isinstance(user_who_follow, int):
@@ -68,7 +93,7 @@ async def unfollow(
         session: AsyncSession,
         user_who_unfollow: Union[User, int],
         user_id: int
-):
+) -> None:
     if isinstance(user_who_unfollow, User):
         who_unfollow_id = user_who_unfollow.user_id
     elif isinstance(user_who_unfollow, int):

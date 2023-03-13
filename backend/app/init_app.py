@@ -1,3 +1,5 @@
+from typing import NewType
+
 from fastapi import FastAPI
 from fastapi.exceptions import RequestValidationError
 from starlette.exceptions import HTTPException
@@ -9,7 +11,7 @@ from custom_exc.no_user_found import NoUserFoundError
 from api.api_v1 import middleware
 
 
-def create_app():
+def create_app() -> FastAPI:
     app = FastAPI()
     app.include_router(api_router, prefix="/api")
 

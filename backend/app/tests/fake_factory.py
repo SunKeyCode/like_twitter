@@ -14,4 +14,5 @@ class UserFactory(factory.alchemy.SQLAlchemyModelFactory):
     user_name: str = factory.Faker('user_name')
     first_name: str = factory.Faker('first_name')
     last_name: str = factory.Faker('last_name')
+    hashed_password: str = factory.Faker('password')
     # reg_date

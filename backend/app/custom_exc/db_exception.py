@@ -4,7 +4,7 @@ import re
 class DbIntegrityError(Exception):
 
     @property
-    def error_message(self):
+    def error_message(self) -> str:
         if not self.args:
             return "No args for error message"
         try:

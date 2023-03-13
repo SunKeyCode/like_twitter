@@ -1,7 +1,7 @@
 from sqlalchemy import func, desc
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy.future import select
-from sqlalchemy.orm import aliased, contains_eager, selectinload
+from sqlalchemy.orm import aliased, contains_eager, selectinload, joinedload
 
 from db_models.follower_model import Follower
 from db_models.like_model import Like
@@ -15,7 +15,7 @@ async def create_tweet(
         session: AsyncSession,
         tweet_data: CreateTweetModelIn,
         author: int | User
-):
+) -> Tweet:
     tweet_as_dict = tweet_data.dict()
     tweet_media_ids = tweet_as_dict.pop("tweet_media_ids")
     tweet = Tweet(**tweet_as_dict)
@@ -30,7 +30,7 @@ async def create_tweet(
     async with session.begin():
         if tweet_media_ids:
             for media_id in tweet_media_ids:
-                # проверка на существование media в базе !!!!!!!!!!!!!
+                # TODO проверка на существование media в базе !!!!!!!!!!!!!
                 media = await session.get(Media, media_id)
                 tweet.attachments.append(media)
             session.add(tweet)
@@ -45,8 +45,7 @@ async def read_feed(
         user_id: int,
         offset=0,
         limit=100,
-
-):
+) -> list[Tweet]:
     sub_query = select(Follower.user_id).where(Follower.follower_id == user_id)
     following_query = select(User.user_id).where(User.user_id.in_(sub_query))
 
@@ -63,7 +62,7 @@ async def read_feed(
         .options(
             contains_eager(Tweet.likes.of_type(aliased_likes))
             .joinedload(aliased_likes.user),
-            selectinload(Tweet.author),
+            joinedload(Tweet.author),
             selectinload(Tweet.attachments),
         )
         .order_by(
@@ -72,8 +71,24 @@ async def read_feed(
     )
     await session.commit()
     return tweets.unique().all()
-    # ---------------------------------------
-    # TODO limits and offsets
+
+
+async def read_tweets(
+        session: AsyncSession,
+        offset=0,
+        limit=100,
+) -> list[Tweet]:
+    tweets = await session.scalars(
+        select(Tweet)
+        .options(
+            selectinload(Tweet.likes).joinedload(Like.user),
+            joinedload(Tweet.author),  # было selectinload
+            selectinload(Tweet.attachments),
+        ).limit(limit).offset(offset)
+    )
+    await session.commit()
+
+    return tweets.all()
 
 
 async def delete_tweet(
@@ -83,6 +98,9 @@ async def delete_tweet(
 ):
     select_query = select(Tweet).where(
         Tweet.tweet_id == tweet_id, Tweet.author_id == user_id
+    ).options(
+        selectinload(Tweet.likes)
+        # TODO удалять attachments из базы и с диска
     )
 
     async with session.begin():
@@ -99,7 +117,7 @@ async def add_like(
         tweet_id: int,
         user_id: int,
         session: AsyncSession
-):
+) -> None:
     async with session.begin():
         new_like = Like(tweet_id=tweet_id, user_id=user_id)
         session.add(new_like)

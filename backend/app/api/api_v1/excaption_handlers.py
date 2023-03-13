@@ -10,7 +10,7 @@ from custom_exc.no_user_found import NoUserFoundError
 DEBUG = True
 
 
-async def integrity_error_handler(_, exc: DbIntegrityError):
+async def integrity_error_handler(_, exc: DbIntegrityError) -> JSONResponse:
     # logger.error(f"Integrity error: {exc.error_message}")
     return JSONResponse(
         status_code=status.HTTP_400_BAD_REQUEST,
@@ -24,7 +24,7 @@ async def integrity_error_handler(_, exc: DbIntegrityError):
     )
 
 
-async def no_user_found_handler(_, exc: NoUserFoundError):
+async def no_user_found_handler(_, exc: NoUserFoundError) -> JSONResponse:
     # сделать объект ErrorMessage через дата класс???
     return JSONResponse(
         status_code=status.HTTP_404_NOT_FOUND,
@@ -38,7 +38,7 @@ async def no_user_found_handler(_, exc: NoUserFoundError):
     )
 
 
-async def http_exceptions_handler(_, exc: HTTPException):
+async def http_exceptions_handler(_, exc: HTTPException) -> JSONResponse:
     return JSONResponse(
         status_code=exc.status_code,
         content=jsonable_encoder(
@@ -51,7 +51,7 @@ async def http_exceptions_handler(_, exc: HTTPException):
     )
 
 
-async def validation_error_handler(_, exc: RequestValidationError):
+async def validation_error_handler(_, exc: RequestValidationError) -> JSONResponse:
     # logger.error(f"Validation error: {exc.errors()}")
     return JSONResponse(
         status_code=status.HTTP_422_UNPROCESSABLE_ENTITY,
@@ -65,7 +65,7 @@ async def validation_error_handler(_, exc: RequestValidationError):
     )
 
 
-async def unexpected_error_handler(_, exc: Exception):
+async def unexpected_error_handler(_, exc: Exception) -> JSONResponse:
     # logger.error(f"Unexpected error:", exc_info=exc)
     return JSONResponse(
         status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,

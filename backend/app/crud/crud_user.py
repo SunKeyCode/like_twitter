@@ -10,8 +10,6 @@ from db_models.follower_model import Follower
 from db_models.user_model import User
 from schemas.user_schema import CreateUserModel
 
-logger = logging.getLogger("main.crud")
-
 
 async def create_user(session: AsyncSession, user_data: CreateUserModel) -> User:
     user = User(**user_data.dict())

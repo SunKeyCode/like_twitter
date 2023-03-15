@@ -19,7 +19,10 @@ class User(Base):
     reg_date: date = Column(Date, default=datetime.today)
 
     # TODO проверить что будет с твитами при удалении пользователя
-    tweets: Mapped[List["Tweet"]] = relationship(back_populates="author", lazy="raise")
+    tweets: Mapped[List["Tweet"]] = relationship(
+        back_populates="author",
+        lazy="raise"
+    )
 
     followers: Mapped[List["User"]] = relationship(
         "User",
@@ -38,5 +41,5 @@ class User(Base):
         lazy="raise"
     )
 
-    def __repr__(self):
+    def __repr__(self) -> str:
         return f"User(id={self.user_id}, user_name={self.user_name})"

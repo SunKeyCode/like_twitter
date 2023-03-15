@@ -28,7 +28,7 @@ class Tweet(Base):
         lazy="raise",
     )
 
-    def __repr__(self):
+    def __repr__(self) -> str:
         return "Tweet(id={},author={}, text={}, created={}, likes={})".format(
             self.tweet_id, self.author_id, self.content, self.created_at,
             self.likes

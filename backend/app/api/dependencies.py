@@ -1,3 +1,5 @@
+from logging import getLogger
+
 from fastapi import Depends
 from sqlalchemy.exc import IntegrityError
 from sqlalchemy.ext.asyncio import AsyncSession
@@ -11,6 +13,8 @@ from db_models.user_model import User
 from db.session import async_session
 from crud import crud_user
 from custom_exc.db_exception import DbIntegrityError
+
+logger = getLogger("main.dependencies")
 
 
 async def get_db_session():
@@ -50,7 +54,7 @@ async def get_current_user_by_apikey(
     if api_key is None:
         raise HTTPException(
             status_code=status.HTTP_401_UNAUTHORIZED,
-            detail="api-key is omitted"
+            detail=f"Api-key is omitted. URL={request.url}"
         )
     if api_key == "test":
         api_key = 1
@@ -63,6 +67,9 @@ async def get_current_user_by_apikey(
     )
 
     if user is None:
+        logger.error(
+            f"Wrong api-key, user not found. ApiKey={api_key}, URL={request.url}"
+        )
         raise NoUserFoundError
 
     return user

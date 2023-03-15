@@ -11,7 +11,7 @@ class LikeForTweetModel(LikeBaseModel):
     name: BriefInfoUserModel = Field(alias="user")
 
     @validator("name")
-    def extract_user_name_value(cls, user_model: BriefInfoUserModel):
+    def extract_user_name_value(cls, user_model: BriefInfoUserModel) -> str:
         return user_model.name
 
     class Config:

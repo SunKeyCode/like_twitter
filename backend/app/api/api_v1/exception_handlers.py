@@ -1,3 +1,5 @@
+from logging import getLogger
+
 from fastapi.encoders import jsonable_encoder
 from fastapi.exceptions import RequestValidationError
 from starlette import status
@@ -6,6 +8,8 @@ from starlette.responses import JSONResponse
 
 from custom_exc.db_exception import DbIntegrityError
 from custom_exc.no_user_found import NoUserFoundError
+
+logger = getLogger("main.exception_handlers")
 
 DEBUG = True
 
@@ -39,6 +43,7 @@ async def no_user_found_handler(_, exc: NoUserFoundError) -> JSONResponse:
 
 
 async def http_exceptions_handler(_, exc: HTTPException) -> JSONResponse:
+    logger.error(exc.detail)
     return JSONResponse(
         status_code=exc.status_code,
         content=jsonable_encoder(
@@ -52,7 +57,7 @@ async def http_exceptions_handler(_, exc: HTTPException) -> JSONResponse:
 
 
 async def validation_error_handler(_, exc: RequestValidationError) -> JSONResponse:
-    # logger.error(f"Validation error: {exc.errors()}")
+    logger.error(f"Validation error: {exc.errors()}")
     return JSONResponse(
         status_code=status.HTTP_422_UNPROCESSABLE_ENTITY,
         content=jsonable_encoder(
@@ -66,7 +71,7 @@ async def validation_error_handler(_, exc: RequestValidationError) -> JSONRespon
 
 
 async def unexpected_error_handler(_, exc: Exception) -> JSONResponse:
-    # logger.error(f"Unexpected error:", exc_info=exc)
+    logger.error(f"Unexpected error:", exc_info=exc)
     return JSONResponse(
         status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
         content=jsonable_encoder(

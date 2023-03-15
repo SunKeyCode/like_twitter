@@ -13,7 +13,7 @@ class DbIntegrityError(Exception):
             # else:
             return self._process_error_message(self.args[0][0])
         except IndexError:
-            return "error message failed"
+            return "Error message failed"
 
     @staticmethod
     def _process_error_message(to_process: str) -> str:

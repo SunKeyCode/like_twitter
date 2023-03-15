@@ -28,7 +28,7 @@ class TweetFullInfoModel(TweetBaseModel):
     attachments: List[media_schema.AttachmentModel] = []
 
     @validator("attachments")
-    def extract_link(cls, attachments: List[media_schema.AttachmentModel]):
+    def extract_link(cls, attachments: List[media_schema.AttachmentModel]) -> list[str]:
         return [attachment.link for attachment in attachments]
 
     class Config:

@@ -1,6 +1,6 @@
 from typing import Any
 
-from fastapi import APIRouter, Depends, status, HTTPException, Request
+from fastapi import APIRouter, Depends, status, HTTPException
 from fastapi.encoders import jsonable_encoder
 from sqlalchemy.ext.asyncio import AsyncSession
 
@@ -23,11 +23,6 @@ async def create_tweet(
         session: AsyncSession = Depends(dependencies.get_db_session),
         current_user: User = Depends(dependencies.get_current_user_by_apikey)
 ) -> dict[str, Any]:
-    if not current_user:
-        raise HTTPException(
-            status_code=status.HTTP_401_UNAUTHORIZED,
-            detail={"You are not authenticated user"}
-        )
 
     tweet = await crud_tweet.create_tweet(
         session=session,

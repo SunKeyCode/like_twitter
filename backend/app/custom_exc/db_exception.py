@@ -1,12 +1,10 @@
 import re
 
-import config
-
 
 class DbIntegrityError(Exception):
 
     @property
-    def error_message(self):
+    def error_message(self) -> str:
         if not self.args:
             return "No args for error message"
         try:
@@ -15,7 +13,7 @@ class DbIntegrityError(Exception):
             # else:
             return self._process_error_message(self.args[0][0])
         except IndexError:
-            return "error message failed"
+            return "Error message failed"
 
     @staticmethod
     def _process_error_message(to_process: str) -> str:
@@ -27,13 +25,3 @@ class DbIntegrityError(Exception):
             return result[0]
         else:
             "No error message"
-
-
-class NoUserFoundError(Exception):
-
-    @property
-    def error_message(self):
-        if config.DEBUG and self.args:
-            return f"User with id={self.args[0]} not found"
-        else:
-            return "User not found"

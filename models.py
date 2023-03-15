@@ -6,14 +6,19 @@ from typing import List
 from sqlalchemy import (
     Column, Integer, String, Date, ForeignKey, Identity
 )
-from sqlalchemy.orm import relationship, Mapped, selectinload, joinedload
-from sqlalchemy.future import select
-from sqlalchemy.ext.asyncio import AsyncSession
+from sqlalchemy.orm import relationship, Mapped
+from sqlalchemy.ext.asyncio import AsyncSession, async_sessionmaker
+from sqlalchemy.orm import DeclarativeBase
 
-from database import Base, async_session, async_engine, async_sessionmaker
+from database import async_session, async_engine
+from configs.app_config import TESTING
 
 logger = logging.getLogger("main.models")
 MEDIA_PATH = "static/images/{user}/"
+
+
+class Base(DeclarativeBase):
+    pass
 
 
 class Follower(Base):
@@ -29,6 +34,7 @@ class User(Base):
 
     user_id: int = Column(Integer, Identity(always=True), primary_key=True)
     user_name: str = Column(String(20), nullable=False, unique=True)
+    hashed_password: str = Column(String, nullable=False)
     first_name: str = Column(String(50), nullable=True)
     last_name: str = Column(String(50), nullable=True)
     reg_date: date = Column(Date, default=datetime.today)
@@ -74,25 +80,25 @@ class Tweet(Base):
         lazy="raise",
     )
 
-    @classmethod
-    async def tweet_by_id(
-            cls,
-            tweet_id: int,
-            a_session: async_sessionmaker[AsyncSession] = async_session
-    ):
-        async with a_session() as session:
-            query_result = await session.execute(
-                select(cls)
-                .where(cls.tweet_id == tweet_id)
-                .options(
-                    joinedload(cls.likes).selectinload(Like.user),
-                    joinedload(cls.author),
-                    selectinload(cls.attachments)
-                )
-            )
-            tweet = query_result.scalars().unique().one_or_none()
-
-        return tweet
+    # @classmethod
+    # async def tweet_by_id(
+    #         cls,
+    #         tweet_id: int,
+    #         a_session: async_sessionmaker[AsyncSession] = async_session
+    # ):
+    #     async with a_session() as session:
+    #         query_result = await session.execute(
+    #             select(cls)
+    #             .where(cls.tweet_id == tweet_id)
+    #             .options(
+    #                 joinedload(cls.likes).selectinload(Like.user),
+    #                 joinedload(cls.author),
+    #                 selectinload(cls.attachments)
+    #             )
+    #         )
+    #         tweet = query_result.scalars().unique().one_or_none()
+    #
+    #     return tweet
 
     def __repr__(self):
         return f"Tweet(id={self.tweet_id}, " \
@@ -136,9 +142,9 @@ async def create_test_data(a_session: async_sessionmaker[AsyncSession]):
     async with a_session() as session:
         async with session.begin():
             logger.debug("Creating test users")
-            user1 = User(user_name="MAIN TEST USER")
-            user2 = User(user_name="user2")
-            user3 = User(user_name="user3")
+            user1 = User(user_name="MAIN TEST USER", hashed_password="123")
+            user2 = User(user_name="user2", hashed_password="123")
+            user3 = User(user_name="user3", hashed_password="123")
 
             session.add_all([user1, user2, user3])
 
@@ -147,8 +153,8 @@ async def create_all():
     async with async_engine.begin() as conn:
         await conn.run_sync(Base.metadata.drop_all)
         await conn.run_sync(Base.metadata.create_all)
-
-    await create_test_data(async_session)
+    if TESTING == "False":
+        await create_test_data(async_session)
 
 
 if __name__ == '__main__':

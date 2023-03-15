@@ -1,12 +1,14 @@
 import logging
 import logging.config
-from logger_config import LOGGER_CONF
+import os
+
+from configs.logger_config import LOGGER_CONF
+
 
 LOG_LEVEL = logging.DEBUG
 
 
 def init_logger():
+    if not os.path.exists("logs"):
+        os.mkdir("logs")
     logging.config.dictConfig(LOGGER_CONF)
-    # logging.basicConfig(level=LOG_LEVEL)
-    # logger = logging.getLogger("main")
-

@@ -5,7 +5,7 @@ LOGGER_CONF = {
     "disable_existing_loggers": False,
     "formatters": {
         "default": {
-            "format": "%(levelname)s:%(name)s  --->  %(message)s",
+            "format": "%(levelname)s:%(name)s >>> %(message)s",
             "datefmt": "%Y-%m-%d %H:%M:%S",
         },
         "to_file": {
@@ -38,15 +38,15 @@ LOGGER_CONF = {
             "level": "DEBUG",
             "handlers": ["console_handler", "error_file_handler"]
         },
-        # "uvicorn.access": {
-        #     "handlers": ["console_handler", "access_file_handler"],
-        #     "level": "ERROR",
-        #     "propagate": False,
-        # },
-        # "uvicorn.error": {
-        #     "handlers": ["console_handler", "error_file_handler"],
-        #     "level": "ERROR",
-        #     "propagate": False,
-        # }
+        "uvicorn.access": {
+            "handlers": ["console_handler", "access_file_handler"],
+            "level": "DEBUG",
+            "propagate": False,
+        },
+        "uvicorn.error": {
+            "handlers": ["console_handler", "error_file_handler"],
+            "level": "ERROR",
+            "propagate": False,
+        }
     }
 }

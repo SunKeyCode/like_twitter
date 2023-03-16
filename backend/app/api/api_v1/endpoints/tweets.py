@@ -68,7 +68,6 @@ async def get_feed(
         user_id=user.user_id,
         offset=0 if pagination.get("offset") is None else pagination["offset"],
         limit=100 if pagination.get("limit") is None else pagination["limit"]
-
     )
     tweets_as_json = map(jsonable_encoder, tweets_as_obj)
 

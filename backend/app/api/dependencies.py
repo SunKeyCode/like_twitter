@@ -54,16 +54,21 @@ async def get_current_user_by_apikey(
     if api_key is None:
         raise HTTPException(
             status_code=status.HTTP_401_UNAUTHORIZED,
-            detail=f"Api-key is omitted. URL={request.url}"
+            detail=f"Api-key is omitted."
         )
     if api_key == "test":
         api_key = 1
     # TODO хранить api-key в базе
-    user_id = api_key
+
+    try:
+        user_id = int(api_key)
+    except ValueError:
+        raise NoUserFoundError
+
     user: User = await crud_user.read_user(
         session=session,
         include_relations=None,
-        user_id=int(user_id)
+        user_id=user_id
     )
 
     if user is None:
@@ -82,4 +87,12 @@ async def get_curren_user(curren_user=Depends(get_current_user_by_apikey)) -> Us
 async def pagination(
         offset: int | None = None, limit: int | None = None
 ) -> dict[str, int]:
+    if not limit:
+        offset = None
+
+    if offset is not None:
+        offset = limit * (offset - 1)
+    else:
+        offset = None
+
     return {"offset": offset, "limit": limit}

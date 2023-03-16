@@ -65,9 +65,8 @@ async def read_feed(
             joinedload(Tweet.author),
             selectinload(Tweet.attachments),
         )
-        .order_by(
-            desc("like_count")
-        ).limit(limit).offset(offset)
+        .order_by(desc("like_count")).order_by(desc(Tweet.tweet_id))
+        .limit(limit).offset(offset)
     )
     await session.commit()
     return tweets.unique().all()

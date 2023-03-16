@@ -9,7 +9,7 @@ LOGGER_CONF = {
             "datefmt": "%Y-%m-%d %H:%M:%S",
         },
         "to_file": {
-            "format": "%(asctime)s %(levelname)s %(name)s %(message)s"
+            "format": "%(asctime)s --- %(levelname)s --- %(name)s --- %(message)s"
         }
     },
     "handlers": {

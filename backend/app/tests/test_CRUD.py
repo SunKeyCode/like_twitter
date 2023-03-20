@@ -9,6 +9,7 @@ from db_models.tweet_model import Tweet
 from schemas.user_schema import CreateUserModel, BriefInfoUserModel
 from schemas.tweet_schema import CreateTweetModelIn
 from crud import crud_user, crud_tweet, crud_media
+from configs import app_config
 
 pytestmark = pytest.mark.asyncio
 
@@ -100,28 +101,56 @@ async def test_unfollow_users(db_session, crud_storage: dict):
 
 
 async def test_create_media(db_session, crud_storage: dict):
+    file_name = "test_file.txt"
+    crud_storage["file_content"] = "content of file"
+    with open(file_name, "w") as file:
+        file.write(crud_storage["file_content"])
 
-    # await crud_media.create_media(
-    #     session=db_session,
-    #     user_id=crud_storage["main_user_id"],
-    #     files=...
-    # )
-    assert False
+    file_data = {
+        "content": open(file_name, "rb").read(),
+        "filename": file_name,
+    }
+
+    media = await crud_media.create_media(
+        session=db_session,
+        user_id=crud_storage["main_user_id"],
+        file_data=file_data
+    )
+
+    crud_storage["media_id"] = media.media_id
+
+    assert media.media_id is not None
 
 
 async def test_create_tweet(db_session, crud_storage: dict):
-    tweet_data = CreateTweetModelIn.parse_obj({"tweet_data": "some text"})
+    tweet_data = CreateTweetModelIn.parse_obj(
+        {
+            "tweet_data": "some text",
+            "tweet_media_ids": [crud_storage["media_id"]]
+        }
+    )
     tweet = await crud_tweet.create_tweet(
         session=db_session,
         tweet_data=tweet_data,
         author=crud_storage["main_user_id"]
     )
-
     assert tweet.author_id == crud_storage["main_user_id"]
 
 
 async def test_read_tweet_with_media(db_session, crud_storage: dict):
-    assert False
+    tweet = (await crud_tweet.read_tweets(
+        session=db_session,
+    ))[0]
+
+    with open(
+            app_config.MEDIA_ROOT.as_posix() + tweet.attachments[0].link, "r"
+    ) as file:
+        file_content = file.read()
+
+    assert tweet.author_id == crud_storage["main_user_id"]
+    assert tweet.content == "some text"
+    assert len(tweet.attachments) == 1
+    assert file_content == crud_storage["file_content"]
 
 
 async def test_add_like(db_session: AsyncSession, crud_storage: dict):
@@ -137,7 +166,6 @@ async def test_add_like(db_session: AsyncSession, crud_storage: dict):
     db_session.expire(tweet)
 
     tweet_after: Tweet = (await crud_tweet.read_tweets(session=db_session))[0]
-    print(tweet_after)
     likes_count_after = len(tweet_after.likes)
 
     assert likes_count_after == likes_count_before + 1

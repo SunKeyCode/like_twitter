@@ -47,7 +47,7 @@ async def delete_tweet(
     else:
         raise HTTPException(
             status_code=status.HTTP_400_BAD_REQUEST,
-            detail="Tweet does not exists or belongs another user"
+            detail="Tweet does not exists or belongs to another user"
         )
 
 

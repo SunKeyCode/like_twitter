@@ -1,6 +1,7 @@
 from logging import getLogger
+from typing import Any
 
-from fastapi import Depends
+from fastapi import Depends, UploadFile
 from sqlalchemy.exc import IntegrityError
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy.orm.exc import FlushError
@@ -13,6 +14,7 @@ from db_models.user_model import User
 from db.session import async_session
 from crud import crud_user
 from custom_exc.db_exception import DbIntegrityError
+from configs import app_config
 
 logger = getLogger("main.dependencies")
 
@@ -96,3 +98,20 @@ async def pagination(
         offset = None
 
     return {"offset": offset, "limit": limit}
+
+
+async def get_file(file: UploadFile) -> dict[str, Any]:
+    chunk = await file.read(1024)
+    content: bytes = chunk
+    real_size = len(chunk)
+
+    while chunk := await file.read(1024):
+        real_size += len(chunk)
+        if real_size > app_config.MAX_IMG_SIZE:
+            raise HTTPException(
+                status_code=status.HTTP_413_REQUEST_ENTITY_TOO_LARGE,
+                detail="File too large",
+            )
+        content += chunk
+
+    return {"content": content, "filename": file.filename}

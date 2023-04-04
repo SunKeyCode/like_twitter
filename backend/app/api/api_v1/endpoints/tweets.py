@@ -13,7 +13,7 @@ router = APIRouter(prefix="/tweets", )
 
 
 @router.post(
-    "/",
+    "",
     description="Creates new tweet",
     response_model=tweet_schema.CreateTweetModelOut,
     status_code=status.HTTP_201_CREATED
@@ -52,7 +52,7 @@ async def delete_tweet(
 
 
 @router.get(
-    "/",
+    "",
     response_model=tweet_schema.TweetsResponseModel,
     response_model_by_alias=False
 )

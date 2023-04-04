@@ -9,10 +9,9 @@ from starlette.responses import JSONResponse
 
 from custom_exc.db_exception import DbIntegrityError
 from custom_exc.no_user_found import NoUserFoundError
+from configs.app_config import DEBUG
 
 logger = getLogger("main.exception_handlers")
-
-DEBUG = True
 
 
 async def integrity_error_handler(_, exc: DbIntegrityError) -> JSONResponse:
@@ -58,7 +57,8 @@ async def http_exceptions_handler(request: Request, exc: HTTPException) -> JSONR
 
 
 async def validation_error_handler(
-        request: Request, exc: RequestValidationError) -> JSONResponse:
+        request: Request, exc: RequestValidationError
+) -> JSONResponse:
     logger.error(f"Validation error: {exc.errors()}. url={request.url}")
     return JSONResponse(
         status_code=status.HTTP_422_UNPROCESSABLE_ENTITY,

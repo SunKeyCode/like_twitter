@@ -11,14 +11,14 @@ from custom_exc.no_user_found import NoUserFoundError
 from logger import init_logger
 from api.api_v1 import middleware
 
-logger = getLogger("main")
+logger = getLogger("main.create_app")
 
 
 def create_app() -> FastAPI:
+    init_logger()
+
     app = FastAPI()
     app.include_router(api_router, prefix="/api")
-
-    init_logger()
 
     app.add_exception_handler(
         exc_class_or_status_code=DbIntegrityError,

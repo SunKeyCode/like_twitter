@@ -1,12 +1,12 @@
 import os
 from pathlib import Path
+from logging import getLogger
 
 from dotenv import load_dotenv
 
 load_dotenv()
 
 DEBUG = True
-TESTING = os.environ.get("TESTING")
 
 DB_NAME = os.environ.get("DB_NAME")
 DB_NAME_TEST = os.environ.get("DB_NAME_TEST")

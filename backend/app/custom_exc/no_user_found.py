@@ -1,4 +1,4 @@
-DEBUG = True
+from configs.app_config import DEBUG
 
 
 class NoUserFoundError(Exception):

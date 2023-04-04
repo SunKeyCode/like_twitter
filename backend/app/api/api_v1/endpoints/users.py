@@ -64,7 +64,7 @@ async def create_user(
     return utils.reformat_any_response(user.user_id, "user_id")
 
 
-@router.post("/api/users/{user_id}/follow")
+@router.post("/{user_id}/follow")
 async def follow_user(
         user_id: int,
         session: AsyncSession = Depends(dependencies.get_db_session),
@@ -77,7 +77,7 @@ async def follow_user(
     return {"result": True}
 
 
-@router.delete("/api/users/{user_id}/follow")
+@router.delete("/{user_id}/follow")
 async def unfollow_user(
         user_id: int,
         session: AsyncSession = Depends(dependencies.get_db_session),

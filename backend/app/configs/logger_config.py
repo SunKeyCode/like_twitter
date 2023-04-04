@@ -1,5 +1,7 @@
 import sys
 
+from configs.app_config import DEBUG
+
 LOGGER_CONF = {
     "version": 1,
     "disable_existing_loggers": False,

@@ -11,7 +11,7 @@ from db_models.media_model import Media
 from configs import app_config
 
 logger = getLogger("main.crud_media")
-# IMAGES_PATH = pathlib.Path().absolute().parents[1].as_posix() + "/static"
+
 IMAGES_PATH = app_config.BASE_DIR.parents[1].as_posix() + "/static"
 
 
@@ -23,11 +23,11 @@ async def create_media(
         file_data: dict[str, Any],
         user_id: int
 ) -> Media:
-    link = "/images/{user}/".format(user=user_id)
+    link = "images/{user}/".format(user=user_id)
 
-    if not os.path.exists(IMAGES_PATH + link):
-        os.mkdir(IMAGES_PATH + link)
-        logger.debug(f"Created path: {IMAGES_PATH + link}")
+    if not os.path.exists(app_config.MEDIA_ROOT / link):
+        os.mkdir(app_config.MEDIA_ROOT / link)
+        logger.debug(f"Created path: {app_config.MEDIA_ROOT + link}")
 
     timestamp = datetime.timestamp(datetime.now())
     # TODO обработать filename from werkzeug.utils import secure_filename
@@ -36,9 +36,7 @@ async def create_media(
     link = "".join([link, new_filename])
 
     async with aiofiles.open(
-            file="".join(
-                [IMAGES_PATH, link]
-            ),
+            file=app_config.MEDIA_ROOT / link,
             mode="wb"
     ) as file_to_write:
         await file_to_write.write(file_data["content"])

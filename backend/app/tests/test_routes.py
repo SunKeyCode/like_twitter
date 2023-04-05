@@ -154,7 +154,7 @@ def test_read_user_with_followers_without_user2(test_client: TestClient, storage
 
 
 def test_create_media(test_client: TestClient, storage):
-    """Checks that it is possible to upload file"""
+    """Checks file uploading"""
     # TODO change media directory for tests
     headers = {
         "api-key": str(storage["main_user_id"])

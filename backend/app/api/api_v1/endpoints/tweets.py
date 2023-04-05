@@ -33,7 +33,11 @@ async def create_tweet(
     return utils.reformat_any_response(key="tweet_id", value=tweet.tweet_id)
 
 
-@router.delete("/{tweet_id}", status_code=status.HTTP_202_ACCEPTED)
+@router.delete(
+    "/{tweet_id}",
+    status_code=status.HTTP_202_ACCEPTED,
+    description="Delete tweet"
+)
 async def delete_tweet(
         tweet_id: int,
         session: AsyncSession = Depends(dependencies.get_db_session),
@@ -54,7 +58,8 @@ async def delete_tweet(
 @router.get(
     "",
     response_model=tweet_schema.TweetsResponseModel,
-    response_model_by_alias=False
+    response_model_by_alias=False,
+    description="Obtain user feed with all the tweets of the users who user follows"
 )
 async def get_feed(
         session: AsyncSession = Depends(dependencies.get_db_session),
@@ -77,7 +82,7 @@ async def get_feed(
 @router.post(
     "/{tweet_id}/likes",
     description="Add like to tweet",
-    status_code=status.HTTP_201_CREATED
+    status_code=status.HTTP_201_CREATED,
 )
 async def add_like(
         tweet_id: int, session: AsyncSession = Depends(dependencies.get_db_session),
@@ -88,7 +93,11 @@ async def add_like(
     return {"result": True}
 
 
-@router.delete("/{tweet_id}/likes", status_code=status.HTTP_202_ACCEPTED)
+@router.delete(
+    "/{tweet_id}/likes",
+    status_code=status.HTTP_202_ACCEPTED,
+    description="Remove like from tweet"
+)
 async def delete_like(
         tweet_id: int,
         session: AsyncSession = Depends(dependencies.get_db_session),

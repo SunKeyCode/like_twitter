@@ -12,6 +12,6 @@ class MediaTweetRelation(Base):
         primary_key=True
     )
     media_id: Mapped[int] = Column(
-        ForeignKey("table_media.media_id"),
-        primary_key=True
+        ForeignKey("table_media.media_id", ondelete="CASCADE"),
+        primary_key=True,
     )

@@ -16,6 +16,7 @@ router = APIRouter(prefix="/users")
     "/me",
     response_model=user_schema.UserMainResponseModel,
     response_model_by_alias=False,
+    description="Profile of current user"
 )
 async def show_me(
         session: AsyncSession = Depends(dependencies.get_db_session),
@@ -38,7 +39,8 @@ async def show_me(
 @router.get(
     "/{user_id}",
     response_model=user_schema.UserMainResponseModel,
-    response_model_by_alias=False
+    response_model_by_alias=False,
+    description="Get user by id"
 )
 async def get_user(
         user_id: int,
@@ -64,7 +66,7 @@ async def create_user(
     return utils.reformat_any_response(user.user_id, "user_id")
 
 
-@router.post("/{user_id}/follow")
+@router.post("/{user_id}/follow", description="Follow user")
 async def follow_user(
         user_id: int,
         session: AsyncSession = Depends(dependencies.get_db_session),
@@ -77,7 +79,7 @@ async def follow_user(
     return {"result": True}
 
 
-@router.delete("/{user_id}/follow")
+@router.delete("/{user_id}/follow", description="Unfollow user")
 async def unfollow_user(
         user_id: int,
         session: AsyncSession = Depends(dependencies.get_db_session),

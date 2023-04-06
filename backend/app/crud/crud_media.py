@@ -1,5 +1,4 @@
 import os
-import pathlib
 from datetime import datetime
 from typing import Any
 from logging import getLogger
@@ -12,11 +11,6 @@ from configs import app_config
 
 logger = getLogger("main.crud_media")
 
-IMAGES_PATH = app_config.BASE_DIR.parents[1].as_posix() + "/static"
-
-
-# TODO рассчитать путь до переменной и добавить ее в configs
-
 
 async def create_media(
         session: AsyncSession,
@@ -27,12 +21,12 @@ async def create_media(
 
     if not os.path.exists(app_config.MEDIA_ROOT / link):
         os.mkdir(app_config.MEDIA_ROOT / link)
-        logger.debug(f"Created path: {app_config.MEDIA_ROOT + link}")
+        logger.debug(f"Created path: {app_config.MEDIA_ROOT / link}")
 
     timestamp = datetime.timestamp(datetime.now())
-    # TODO обработать filename from werkzeug.utils import secure_filename
-    # или написать свой вариант
+
     new_filename = "{:.4f}_{}".format(timestamp, file_data["filename"])
+
     link = "".join([link, new_filename])
 
     async with aiofiles.open(

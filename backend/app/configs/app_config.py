@@ -1,6 +1,5 @@
 import os
 from pathlib import Path
-from logging import getLogger
 
 from dotenv import load_dotenv
 
@@ -22,4 +21,4 @@ BASE_DIR = Path(__file__).resolve().parents[1]
 
 MEDIA_ROOT = BASE_DIR.parents[1] / "static"
 
-TEST_MEDIA_DIR = ""
+TEST_MEDIA_ROOT = BASE_DIR / "tests"

@@ -9,6 +9,7 @@ from db_models.media_model import Media
 from db_models.tweet_model import Tweet
 from db_models.user_model import User
 from schemas.tweet_schema import CreateTweetModelIn
+from custom_exc.db_exception import DbIntegrityError
 
 
 async def create_tweet(
@@ -30,12 +31,11 @@ async def create_tweet(
     async with session.begin():
         if tweet_media_ids:
             for media_id in tweet_media_ids:
-                # TODO проверка на существование media в базе !!!!!!!!!!!!!
                 media = await session.get(Media, media_id)
+                if media is None:
+                    continue
                 tweet.attachments.append(media)
-            session.add(tweet)
-        else:
-            session.add(tweet)
+        session.add(tweet)
 
     return tweet
 
@@ -100,7 +100,6 @@ async def delete_tweet(
     ).options(
         selectinload(Tweet.likes),
         selectinload(Tweet.attachments),
-        # TODO удалять attachments из базы и с диска
     )
 
     async with session.begin():

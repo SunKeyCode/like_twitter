@@ -1,7 +1,7 @@
-from pydantic import BaseModel, Field, validator
 from typing import List
 
-from schemas import user_schema, media_schema, like_schema
+from pydantic import BaseModel, Field, validator
+from schemas import like_schema, media_schema, user_schema
 
 
 class TweetBaseModel(BaseModel):

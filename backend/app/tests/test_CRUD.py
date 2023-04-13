@@ -1,15 +1,14 @@
 import random
 
 import pytest
+from configs import app_config
+from crud import crud_media, crud_tweet, crud_user
+from db_models.tweet_model import Tweet
+from db_models.user_model import User
+from schemas.tweet_schema import CreateTweetModelIn
+from schemas.user_schema import BriefInfoUserModel, CreateUserModel
 from sqlalchemy.exc import IntegrityError
 from sqlalchemy.ext.asyncio import AsyncSession
-
-from db_models.user_model import User
-from db_models.tweet_model import Tweet
-from schemas.user_schema import CreateUserModel, BriefInfoUserModel
-from schemas.tweet_schema import CreateTweetModelIn
-from crud import crud_user, crud_tweet, crud_media
-from configs import app_config
 
 pytestmark = pytest.mark.asyncio
 
@@ -37,9 +36,7 @@ async def test_create_user_with_same_username(db_session):
 async def test_read_user(db_session, storage):
     stored_user_id = storage["main_user_id"]
     user_from_db: User = await crud_user.read_user(
-        session=db_session,
-        user_id=stored_user_id,
-        include_relations=None
+        session=db_session, user_id=stored_user_id, include_relations=None
     )
     assert user_from_db.user_name == "test_user"
 
@@ -65,9 +62,7 @@ async def test_users_count(db_session):
 async def test_follow_users(db_session, storage):
     for user in storage["other_users"]:
         await crud_user.follow_user(
-            session=db_session,
-            user_who_follow=storage["main_user_id"],
-            user_id=user.id
+            session=db_session, user_who_follow=storage["main_user_id"], user_id=user.id
         )
         if storage.get("following"):
             storage["following"].append(user)
@@ -75,9 +70,7 @@ async def test_follow_users(db_session, storage):
             storage["following"] = [user]
 
     user_from_db: User = await crud_user.read_user(
-        session=db_session,
-        user_id=storage["main_user_id"],
-        include_relations="all"
+        session=db_session, user_id=storage["main_user_id"], include_relations="all"
     )
 
     assert len(user_from_db.following) == 4
@@ -89,13 +82,11 @@ async def test_unfollow_users(db_session, storage):
         await crud_user.unfollow(
             session=db_session,
             user_who_unfollow=storage["main_user_id"],
-            user_id=to_unfollow.id
+            user_id=to_unfollow.id,
         )
 
     user_from_db: User = await crud_user.read_user(
-        session=db_session,
-        user_id=storage["main_user_id"],
-        include_relations="all"
+        session=db_session, user_id=storage["main_user_id"], include_relations="all"
     )
 
     assert len(user_from_db.following) == 2
@@ -113,9 +104,7 @@ async def test_create_media(db_session, storage):
     }
 
     media = await crud_media.create_media(
-        session=db_session,
-        user_id=storage["main_user_id"],
-        file_data=file_data
+        session=db_session, user_id=storage["main_user_id"], file_data=file_data
     )
 
     storage["media_id"] = media.media_id
@@ -125,26 +114,23 @@ async def test_create_media(db_session, storage):
 
 async def test_create_tweet(db_session, storage):
     tweet_data = CreateTweetModelIn.parse_obj(
-        {
-            "tweet_data": "some text",
-            "tweet_media_ids": [storage["media_id"]]
-        }
+        {"tweet_data": "some text", "tweet_media_ids": [storage["media_id"]]}
     )
     tweet = await crud_tweet.create_tweet(
-        session=db_session,
-        tweet_data=tweet_data,
-        author=storage["main_user_id"]
+        session=db_session, tweet_data=tweet_data, author=storage["main_user_id"]
     )
     assert tweet.author_id == storage["main_user_id"]
 
 
 async def test_read_tweet_with_media(db_session, storage):
-    tweet = (await crud_tweet.read_tweets(
-        session=db_session,
-    ))[0]
+    tweet = (
+        await crud_tweet.read_tweets(
+            session=db_session,
+        )
+    )[0]
 
     with open(
-            app_config.MEDIA_ROOT.as_posix() + tweet.attachments[0].link, "r"
+        app_config.MEDIA_ROOT.as_posix() + tweet.attachments[0].link, "r"
     ) as file:
         file_content = file.read()
 
@@ -159,9 +145,7 @@ async def test_add_like(db_session: AsyncSession, storage):
     likes_count_before = len(tweet.likes)
 
     await crud_tweet.add_like(
-        session=db_session,
-        user_id=storage["main_user_id"],
-        tweet_id=tweet.tweet_id
+        session=db_session, user_id=storage["main_user_id"], tweet_id=tweet.tweet_id
     )
 
     db_session.expire(tweet)
@@ -177,9 +161,7 @@ async def test_add_like_twice(db_session, storage):
 
     with pytest.raises(IntegrityError):
         await crud_tweet.add_like(
-            session=db_session,
-            user_id=storage["main_user_id"],
-            tweet_id=tweet.tweet_id
+            session=db_session, user_id=storage["main_user_id"], tweet_id=tweet.tweet_id
         )
 
 
@@ -188,9 +170,7 @@ async def test_remove_like(db_session, storage):
     likes_count_before = len(tweet.likes)
 
     await crud_tweet.remove_like(
-        session=db_session,
-        tweet_id=tweet.tweet_id,
-        user_id=storage["main_user_id"]
+        session=db_session, tweet_id=tweet.tweet_id, user_id=storage["main_user_id"]
     )
 
     db_session.expire(tweet)
@@ -207,9 +187,7 @@ async def test_delete_tweet(db_session, storage):
     tweet_id = tweets[0].tweet_id
 
     await crud_tweet.delete_tweet(
-        session=db_session,
-        user_id=storage["main_user_id"],
-        tweet_id=tweet_id
+        session=db_session, user_id=storage["main_user_id"], tweet_id=tweet_id
     )
 
     tweets_count_after = len(await crud_tweet.read_tweets(session=db_session))
@@ -227,9 +205,7 @@ async def test_create_tweets_by_other_users(db_session, storage):
             )
 
             tweet = await crud_tweet.create_tweet(
-                session=db_session,
-                tweet_data=tweet_data,
-                author=user.id
+                session=db_session, tweet_data=tweet_data, author=user.id
             )
 
             if storage.get("tweets_for_feed"):
@@ -244,12 +220,9 @@ async def test_create_tweets_by_other_users(db_session, storage):
     assert len(tweets) == total_tweets
 
 
-async def test_have_tweets_in_feed(
-        db_session: AsyncSession, storage
-):
+async def test_have_tweets_in_feed(db_session: AsyncSession, storage):
     feed = await crud_tweet.read_feed(
-        session=db_session,
-        user_id=storage["main_user_id"]
+        session=db_session, user_id=storage["main_user_id"]
     )
 
     assert len(feed) == len(storage["tweets_for_feed"])
@@ -266,16 +239,13 @@ async def test_feed_sorting(db_session: AsyncSession, storage):
         tweet_id = tweets_for_feed.pop()
         for user in users:
             await crud_tweet.add_like(
-                session=db_session,
-                tweet_id=tweet_id,
-                user_id=user.id
+                session=db_session, tweet_id=tweet_id, user_id=user.id
             )
         sorted_tweet_id_list.append(tweet_id)
         users.pop()
 
     feed = await crud_tweet.read_feed(
-        session=db_session,
-        user_id=storage["main_user_id"]
+        session=db_session, user_id=storage["main_user_id"]
     )
     tweet_id_list_from_feed = [tweet.tweet_id for tweet in feed]
 
@@ -283,13 +253,11 @@ async def test_feed_sorting(db_session: AsyncSession, storage):
 
 
 async def test_delete_tweet_that_does_not_belong_to_user(
-        db_session: AsyncSession, storage
+    db_session: AsyncSession, storage
 ):
     tweet_id = random.choice(storage["tweets_for_feed"])
     result: bool = await crud_tweet.delete_tweet(
-        session=db_session,
-        user_id=storage["main_user_id"],
-        tweet_id=tweet_id
+        session=db_session, user_id=storage["main_user_id"], tweet_id=tweet_id
     )
 
     assert not result

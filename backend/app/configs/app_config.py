@@ -13,6 +13,14 @@ DB_USER = os.environ.get("DB_USER")
 DB_PASSWORD = os.environ.get("DB_PASSWORD")
 DB_HOST = os.environ.get("DB_HOST")
 
+# Authentication configuration. One of ["API-KEY", "JWT"]
+AUTH_CONFIG = "API-KEY"
+
+# for JWT authentication
+SECRET_KEY = os.getenv("SECRET_KEY")
+ALGORITHM = "HS256"
+ACCESS_TOKEN_EXPIRE_MINUTES = 15
+
 # максимальный размер изображения в байтах, 1Мб = 1048576
 MAX_IMG_SIZE = 1048576
 

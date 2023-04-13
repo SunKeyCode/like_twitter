@@ -2,7 +2,6 @@ import re
 
 
 class DbIntegrityError(Exception):
-
     @property
     def error_message(self) -> str:
         if not self.args:
@@ -24,4 +23,4 @@ class DbIntegrityError(Exception):
         if result:
             return result[0]
         else:
-            "No error message"
+            return "No error message"

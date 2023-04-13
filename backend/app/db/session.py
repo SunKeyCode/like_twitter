@@ -1,18 +1,17 @@
+import os
 from logging import getLogger
 from logging.config import dictConfig
-import os
 
-from sqlalchemy.ext.asyncio import create_async_engine, async_sessionmaker
-
-from configs.logger_config import LOGGER_CONF
 from configs import app_config
+from configs.logger_config import LOGGER_CONF
+from sqlalchemy.ext.asyncio import async_sessionmaker, create_async_engine
 
 logger = getLogger("main.session")
 dictConfig(LOGGER_CONF)
 
 TESTING = os.environ.get("TESTING")
 
-logger.debug(f"TESTING_CONFIG={TESTING}")
+logger.debug("TESTING_CONFIG=%s", TESTING)
 
 if TESTING == "True":
     db_name = app_config.DB_NAME_TEST

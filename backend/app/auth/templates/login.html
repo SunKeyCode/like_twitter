@@ -1,0 +1,20 @@
+{% extends "base.html" %}
+
+{% block title %}
+    login
+{% endblock %}
+
+{% block body %}
+    <div class="login-form-wrapper">
+        <h1 class="header-1">Login page</h1>
+        <form method="post" action="/auth/token" class="login-form">
+            <label class="input-label">login:
+                <input type="text" name="username" class="input-field" id="login">
+            </label>
+            <label class="input-label">password:
+                <input type="text" name="password" class="input-field" id="password">
+            </label>
+            <button type="submit" class="submit-button">login</button>
+        </form>
+    </div>
+{% endblock %}

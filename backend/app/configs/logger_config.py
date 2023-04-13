@@ -1,6 +1,5 @@
 import sys
 
-from configs.app_config import DEBUG
 
 LOGGER_CONF = {
     "version": 1,
@@ -12,7 +11,7 @@ LOGGER_CONF = {
         },
         "to_file": {
             "format": "%(asctime)s --- %(levelname)s --- %(name)s --- %(message)s"
-        }
+        },
     },
     "handlers": {
         "console_handler": {
@@ -25,20 +24,20 @@ LOGGER_CONF = {
             "class": "logging.FileHandler",
             "formatter": "to_file",
             "filename": "logs/access.log",
-            "mode": "a"
+            "mode": "a",
         },
         "error_file_handler": {
             "class": "logging.FileHandler",
             "level": "ERROR",
             "formatter": "to_file",
             "filename": "logs/error.log",
-            "mode": "a"
-        }
+            "mode": "a",
+        },
     },
     "loggers": {
         "main": {
             "level": "DEBUG",
-            "handlers": ["console_handler", "error_file_handler"]
+            "handlers": ["console_handler", "error_file_handler"],
         },
         "uvicorn.access": {
             "handlers": ["console_handler", "access_file_handler"],
@@ -49,6 +48,6 @@ LOGGER_CONF = {
             "handlers": ["console_handler", "error_file_handler"],
             "level": "ERROR",
             "propagate": False,
-        }
-    }
+        },
+    },
 }

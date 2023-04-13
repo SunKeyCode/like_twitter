@@ -1,5 +1,5 @@
-from random import choice
 from operator import itemgetter
+from random import choice
 
 import pytest
 from fastapi.testclient import TestClient
@@ -63,10 +63,7 @@ def test_create_users_to_follow(test_client: TestClient, storage: dict, user_nam
     # create other users
     response = test_client.post("/api/users", json=data)
 
-    user = {
-        "username": user_name,
-        "id": response.json()["user_id"]
-    }
+    user = {"username": user_name, "id": response.json()["user_id"]}
     if storage.get("users_to_follow"):
         storage["users_to_follow"].append(user)
     else:
@@ -79,9 +76,7 @@ def test_create_users_to_follow(test_client: TestClient, storage: dict, user_nam
 def test_follow_user(test_client: TestClient, storage: dict, index):
     users_to_follow = storage["users_to_follow"]
     # authenticate user
-    headers = {
-        "api-key": str(storage["main_user_id"])
-    }
+    headers = {"api-key": str(storage["main_user_id"])}
 
     response = test_client.post(
         f"/api/users/{users_to_follow[index]['id']}/follow",
@@ -113,9 +108,7 @@ def test_unfollow_user(test_client: TestClient, storage: dict):
     """Unfollow user2"""
 
     # authenticate user
-    headers = {
-        "api-key": str(storage["main_user_id"])
-    }
+    headers = {"api-key": str(storage["main_user_id"])}
 
     user_2_id = storage["user_2_id"]
 
@@ -131,9 +124,7 @@ def test_read_user_with_followers_without_user2(test_client: TestClient, storage
 
     user_id = storage["main_user_id"]
 
-    headers = {
-        "api-key": str(storage["main_user_id"])
-    }
+    headers = {"api-key": str(storage["main_user_id"])}
 
     response = test_client.get(
         f"/api/users/{user_id}",
@@ -155,20 +146,14 @@ def test_read_user_with_followers_without_user2(test_client: TestClient, storage
 
 def test_create_media(test_client: TestClient, storage):
     """Checks file uploading"""
-    headers = {
-        "api-key": str(storage["main_user_id"])
-    }
+    headers = {"api-key": str(storage["main_user_id"])}
 
     with open("for_tests.txt", "w") as file:
         file.write("content of file")
 
-    file = {'file': open("for_tests.txt", "rb")}
+    file = {"file": open("for_tests.txt", "rb")}
 
-    response = test_client.post(
-        "/api/medias",
-        files=file,
-        headers=headers
-    )
+    response = test_client.post("/api/medias", files=file, headers=headers)
 
     response_data: dict = response.json()
 
@@ -185,17 +170,9 @@ def test_create_media(test_client: TestClient, storage):
 def test_create_tweet(test_client: TestClient, storage: dict):
     """Creates tweet with attached file"""
     media_ids = storage.get("tweet_media_ids")
-    data = {
-        "tweet_data": "some text written some user",
-        "tweet_media_ids": media_ids
-    }
-    headers = {
-        "api-key": str(storage["main_user_id"])
-    }
-    response = test_client.post(
-        "/api/tweets", json=data,
-        headers=headers
-    )
+    data = {"tweet_data": "some text written some user", "tweet_media_ids": media_ids}
+    headers = {"api-key": str(storage["main_user_id"])}
+    response = test_client.post("/api/tweets", json=data, headers=headers)
 
     response_data: dict = response.json()
     tweet_id = response_data.get("tweet_id")
@@ -210,10 +187,7 @@ def test_like(test_client: TestClient, storage: dict):
     """Likes tweet"""
     tweet_id = storage["tweet_id"]
     headers["api-key"] = str(storage["main_user_id"])
-    response = test_client.post(
-        f"/api/tweets/{tweet_id}/likes",
-        headers=headers
-    )
+    response = test_client.post(f"/api/tweets/{tweet_id}/likes", headers=headers)
 
     assert response.status_code == 201
     assert response.json()["result"]
@@ -222,10 +196,7 @@ def test_like(test_client: TestClient, storage: dict):
 def test_like_twice(test_client: TestClient, storage: dict):
     tweet_id = storage["tweet_id"]
     headers["api-key"] = str(storage["main_user_id"])
-    response = test_client.post(
-        f"/api/tweets/{tweet_id}/likes",
-        headers=headers
-    )
+    response = test_client.post(f"/api/tweets/{tweet_id}/likes", headers=headers)
     assert response.status_code == 400
     assert not response.json()["result"]
 
@@ -261,10 +232,7 @@ def test_crete_tweets_by_user3(test_client: TestClient, storage: dict):
         data = {
             "tweet_data": f"tweet_{i + 1} of user3",
         }
-        response = test_client.post(
-            "/api/tweets", json=data,
-            headers=headers
-        )
+        response = test_client.post("/api/tweets", json=data, headers=headers)
         response_data = response.json()
         tweet_id = response_data.get("tweet_id")
 
@@ -296,10 +264,7 @@ def test_crete_tweets_by_user4(test_client: TestClient, storage: dict):
         data = {
             "tweet_data": f"tweet_{i + 1} of user4",
         }
-        response = test_client.post(
-            "/api/tweets", json=data,
-            headers=headers
-        )
+        response = test_client.post("/api/tweets", json=data, headers=headers)
         response_data = response.json()
         tweet_id = response_data.get("tweet_id")
 
@@ -314,8 +279,7 @@ def test_crete_tweets_by_user4(test_client: TestClient, storage: dict):
     # add like to last tweet
     for tweet in storage["other_tweets"][1:0:-1]:
         response = test_client.post(
-            f"/api/tweets/{tweet['tweet_id']}/likes",
-            headers=headers
+            f"/api/tweets/{tweet['tweet_id']}/likes", headers=headers
         )
         assert response.status_code == 201
         tweet["likes"] += 1
@@ -332,8 +296,7 @@ def test_feed(test_client: TestClient, storage: dict):
     # add likes for all other tweets except first
     for tweet in storage["other_tweets"][:0:-1]:
         response = test_client.post(
-            f"/api/tweets/{tweet['tweet_id']}/likes",
-            headers=headers
+            f"/api/tweets/{tweet['tweet_id']}/likes", headers=headers
         )
         assert response.status_code == 201
         tweet["likes"] += 1

@@ -1,14 +1,12 @@
-import logging
-from typing import Union
+from typing import Literal, Union, Optional
 
-from sqlalchemy import delete
-from sqlalchemy.ext.asyncio import AsyncSession
-from sqlalchemy.future import select
-from sqlalchemy.orm import selectinload
-
+from crud.utils import user_include_relations
 from db_models.follower_model import Follower
 from db_models.user_model import User
 from schemas.user_schema import CreateUserModel
+from sqlalchemy import delete
+from sqlalchemy.ext.asyncio import AsyncSession
+from sqlalchemy.future import select
 
 
 async def create_user(session: AsyncSession, user_data: CreateUserModel) -> User:
@@ -20,48 +18,46 @@ async def create_user(session: AsyncSession, user_data: CreateUserModel) -> User
 
 
 async def read_user(
-        session: AsyncSession,
-        user_id: int,
-        include_relations: str = None,
+    session: AsyncSession,
+    user_id: int,
+    include_relations: Literal["all", "followers", "following"] | None = None,
 ) -> User:
     statement = select(User).where(User.user_id == user_id)
-    if include_relations == "followers":
-        statement = statement.options(
-            selectinload(User.followers),
-        )
-    elif include_relations == "following":
-        statement = statement.options(
-            selectinload(User.following),
-        )
-    elif include_relations == "all":
-        statement = statement.options(
-            selectinload(User.followers),
-            selectinload(User.following),
-        )
+
+    statement = user_include_relations(
+        statement=statement, include_relations=include_relations
+    )
+
+    async with session.begin():
+        user = await session.scalars(statement)
+    return user.one_or_none()
+
+
+async def read_user_by_username(
+    session: AsyncSession,
+    username: str,
+    include_relations: Literal["all", "followers", "following"] | None = None,
+):
+    statement = select(User).where(User.user_name == username)
+
+    statement = user_include_relations(
+        statement=statement, include_relations=include_relations
+    )
+
     async with session.begin():
         user = await session.scalars(statement)
     return user.one_or_none()
 
 
 async def read_all(
-        session: AsyncSession,
-        include_relations: str = None,
+    session: AsyncSession,
+    include_relations: Optional[Literal['all', 'followers', 'following']] = None,
 ) -> list[User]:
     statement = select(User)
 
-    if include_relations == "followers":
-        statement = statement.options(
-            selectinload(User.followers),
-        )
-    elif include_relations == "following":
-        statement = statement.options(
-            selectinload(User.following),
-        )
-    elif include_relations == "all":
-        statement = statement.options(
-            selectinload(User.followers),
-            selectinload(User.following),
-        )
+    statement = user_include_relations(
+        statement=statement, include_relations=include_relations
+    )
 
     async with session.begin():
         user = await session.scalars(statement)
@@ -69,9 +65,7 @@ async def read_all(
 
 
 async def follow_user(
-        session: AsyncSession,
-        user_who_follow: Union[User, int],
-        user_id: int
+    session: AsyncSession, user_who_follow: Union[User, int], user_id: int
 ) -> None:
     if isinstance(user_who_follow, User):
         who_fallow_id = user_who_follow.user_id
@@ -88,9 +82,7 @@ async def follow_user(
 
 
 async def unfollow(
-        session: AsyncSession,
-        user_who_unfollow: Union[User, int],
-        user_id: int
+    session: AsyncSession, user_who_unfollow: Union[User, int], user_id: int
 ) -> None:
     if isinstance(user_who_unfollow, User):
         who_unfollow_id = user_who_unfollow.user_id

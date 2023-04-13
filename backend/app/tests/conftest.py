@@ -2,14 +2,11 @@ import asyncio
 import os
 
 import pytest
-from sqlalchemy import create_engine
-from sqlalchemy.ext.asyncio import create_async_engine, async_sessionmaker
-from sqlalchemy_utils import create_database, drop_database, database_exists
-from fastapi.testclient import TestClient
-
 from configs import app_config
-from tests.utils.db import create_db, drop_db
 from db.base import *
+from fastapi.testclient import TestClient
+from sqlalchemy.ext.asyncio import async_sessionmaker, create_async_engine
+from tests.utils.db import create_db, drop_db
 
 os.environ.setdefault("TESTING", "True")
 
@@ -29,7 +26,7 @@ async_session = async_sessionmaker(bind=async_engine, expire_on_commit=False)
 testing_cache = {}
 
 
-@pytest.fixture(scope='session')
+@pytest.fixture(scope="session")
 def event_loop():
     """
     Creates an instance of the default event loop for the test session.

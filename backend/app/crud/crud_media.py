@@ -1,27 +1,26 @@
 import os
 from datetime import datetime
-from typing import Any
 from logging import getLogger
+from typing import Any
 
 import aiofiles
-from sqlalchemy.ext.asyncio import AsyncSession
-
-from db_models.media_model import Media
 from configs import app_config
+from db_models.media_model import Media
+from sqlalchemy.ext.asyncio import AsyncSession
 
 logger = getLogger("main.crud_media")
 
 
 async def create_media(
-        session: AsyncSession,
-        file_data: dict[str, Any],
-        user_id: int
+    session: AsyncSession,
+    file_data: dict[str, Any],
+    user_id: int,
 ) -> Media:
     link = "images/{user}/".format(user=user_id)
 
     if not os.path.exists(app_config.MEDIA_ROOT / link):
         os.mkdir(app_config.MEDIA_ROOT / link)
-        logger.debug(f"Created path: {app_config.MEDIA_ROOT / link}")
+        logger.debug("Created path: %s", app_config.MEDIA_ROOT / link)
 
     timestamp = datetime.timestamp(datetime.now())
 
@@ -30,8 +29,8 @@ async def create_media(
     link = "".join([link, new_filename])
 
     async with aiofiles.open(
-            file=app_config.MEDIA_ROOT / link,
-            mode="wb"
+        file=app_config.MEDIA_ROOT / link,
+        mode="wb",
     ) as file_to_write:
         await file_to_write.write(file_data["content"])
 

@@ -1,5 +1,6 @@
-from pydantic import BaseModel, Field
 from typing import List
+
+from pydantic import BaseModel, Field
 
 
 class UserBaseModel(BaseModel):
@@ -10,7 +11,7 @@ class CreateUserModel(BaseModel):
     user_name: str
     first_name: str | None = None
     last_name: str | None = None
-    hashed_password: str
+    password: str
 
 
 class BriefInfoUserModel(UserBaseModel):

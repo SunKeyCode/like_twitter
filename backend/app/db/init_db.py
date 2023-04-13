@@ -1,10 +1,9 @@
 from logging import getLogger
 
-from sqlalchemy.ext.asyncio import AsyncSession
-
-from db.session import async_engine
 from db.base_class import Base
+from db.session import async_engine
 from db_models.user_model import User
+from sqlalchemy.ext.asyncio import AsyncSession
 
 logger = getLogger("main.init_db")
 

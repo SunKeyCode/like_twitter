@@ -1,11 +1,11 @@
-from datetime import datetime, date
+from datetime import date, datetime
 from typing import List
-
-from sqlalchemy import Column, Integer, Identity, String, Date
-from sqlalchemy.orm import Mapped, relationship
 
 from db.base_class import Base
 from db_models.follower_model import Follower
+from db_models.tweet_model import Tweet
+from sqlalchemy import Column, Date, Identity, Integer, String
+from sqlalchemy.orm import Mapped, relationship
 
 
 class User(Base):
@@ -13,16 +13,13 @@ class User(Base):
 
     user_id: int = Column(Integer, Identity(always=True), primary_key=True)
     user_name: str = Column(String(20), nullable=False, unique=True)
-    hashed_password: str = Column(String, nullable=False)
+    password: str = Column(String, nullable=False)
     first_name: str = Column(String(50), nullable=True)
     last_name: str = Column(String(50), nullable=True)
     reg_date: date = Column(Date, default=datetime.today)
 
-    # TODO проверить что будет с твитами при удалении пользователя
-    tweets: Mapped[List["Tweet"]] = relationship(
-        back_populates="author",
-        lazy="raise"
-    )
+    # TODO это нужно удалить????????????
+    tweets: Mapped[List["Tweet"]] = relationship(back_populates="author", lazy="raise")
 
     followers: Mapped[List["User"]] = relationship(
         "User",
@@ -30,7 +27,7 @@ class User(Base):
         primaryjoin=user_id == Follower.user_id,
         secondaryjoin=user_id == Follower.follower_id,
         viewonly=True,
-        lazy="raise"
+        lazy="raise",
     )
 
     following: Mapped[List["User"]] = relationship(
@@ -38,7 +35,7 @@ class User(Base):
         primaryjoin=user_id == Follower.follower_id,
         secondaryjoin=user_id == Follower.user_id,
         viewonly=True,
-        lazy="raise"
+        lazy="raise",
     )
 
     def __repr__(self) -> str:

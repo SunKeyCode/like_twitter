@@ -1,9 +1,8 @@
 import pathlib
 
-from fastapi import APIRouter, Depends
-
 from api.dependencies import get_db_session
 from db import init_db
+from fastapi import APIRouter, Depends
 
 router = APIRouter()
 

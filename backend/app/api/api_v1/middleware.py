@@ -1,8 +1,5 @@
-from starlette.types import Scope, Receive, Send
 from starlette.requests import Request
-import aiofiles
-import pathlib
-import json
+from starlette.types import Receive, Scope, Send
 
 
 class LoggingRequestsAsJson:

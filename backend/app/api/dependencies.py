@@ -45,6 +45,10 @@ async def get_user_by_jwt_token(
         detail="Could not validate credentials",
         headers={"WWW-Authenticate": "Bearer"},
     )
+
+    if app_config.SECRET_KEY is None:
+        raise JWTError("SECRET_KEY is not set")
+
     try:
         payload = jwt.decode(
             token, app_config.SECRET_KEY, algorithms=[app_config.ALGORITHM]
@@ -54,7 +58,10 @@ async def get_user_by_jwt_token(
         print("jwt error")
         raise credentials_exception
 
-    user: User = await crud_user.read_user(user_id=user_id, session=db_session)
+    if user_id is None:
+        raise credentials_exception
+
+    user: User | None = await crud_user.read_user(user_id=user_id, session=db_session)
 
     if user is None:
         raise credentials_exception
@@ -82,7 +89,7 @@ async def get_current_user_by_apikey(
     except ValueError:
         raise NoUserFoundError
 
-    user: User = await crud_user.read_user(
+    user: User | None = await crud_user.read_user(
         session=session,
         include_relations=None,
         user_id=user_id,

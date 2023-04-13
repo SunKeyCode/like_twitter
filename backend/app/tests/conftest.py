@@ -1,5 +1,6 @@
 import asyncio
 import os
+from typing import Any, Generator
 
 import pytest
 from configs import app_config
@@ -23,7 +24,7 @@ async_engine = create_async_engine(DB_URL)
 
 async_session = async_sessionmaker(bind=async_engine, expire_on_commit=False)
 
-testing_cache = {}
+testing_cache: dict[str, Any] = {}
 
 
 @pytest.fixture(scope="session")
@@ -63,7 +64,7 @@ def db_session():
 
 
 @pytest.fixture(scope="session")
-def test_client() -> TestClient:
+def test_client() -> Generator:
     print("Testing =", os.environ.get("TESTING"))
     with TestClient(app) as client:
         yield client

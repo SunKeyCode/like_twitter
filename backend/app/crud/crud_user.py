@@ -1,4 +1,4 @@
-from typing import Literal, Union, Optional
+from typing import Literal, Union, Optional, Sequence
 
 from crud.utils import user_include_relations
 from db_models.follower_model import Follower
@@ -21,7 +21,7 @@ async def read_user(
     session: AsyncSession,
     user_id: int,
     include_relations: Literal["all", "followers", "following"] | None = None,
-) -> User:
+) -> Optional[User]:
     statement = select(User).where(User.user_id == user_id)
 
     statement = user_include_relations(
@@ -52,7 +52,7 @@ async def read_user_by_username(
 async def read_all(
     session: AsyncSession,
     include_relations: Optional[Literal['all', 'followers', 'following']] = None,
-) -> list[User]:
+) -> Sequence[User]:
     statement = select(User)
 
     statement = user_include_relations(

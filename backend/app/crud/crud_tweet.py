@@ -1,3 +1,5 @@
+from typing import Sequence
+
 from db_models.follower_model import Follower
 from db_models.like_model import Like
 from db_models.media_model import Media
@@ -41,7 +43,7 @@ async def read_feed(
     user_id: int,
     offset=0,
     limit=100,
-) -> list[Tweet]:
+) -> Sequence[Tweet]:
     sub_query = select(Follower.user_id).where(Follower.follower_id == user_id)
     following_query = select(User.user_id).where(User.user_id.in_(sub_query))
 
@@ -76,12 +78,12 @@ async def read_tweets(
     session: AsyncSession,
     offset=0,
     limit=100,
-) -> list[Tweet]:
+) -> Sequence[Tweet]:
     tweets = await session.scalars(
         select(Tweet)
         .options(
             selectinload(Tweet.likes).joinedload(Like.user),
-            joinedload(Tweet.author),  # было selectinload
+            joinedload(Tweet.author),
             selectinload(Tweet.attachments),
         )
         .limit(limit)

@@ -15,35 +15,38 @@ pytestmark = pytest.mark.asyncio
 other_users = ["user2", "user3", "user4", "user5"]
 
 
-async def test_create_all(create_all):
+async def test_create_all(create_all) -> None:
     # await create_all
     await create_all.__anext__()
 
 
-async def test_create_user(db_session, storage):
-    fake_user = CreateUserModel(user_name="test_user", hashed_password="123")
+async def test_create_user(db_session, storage) -> None:
+    fake_user = CreateUserModel(user_name="test_user", password="123")
     user = await crud_user.create_user(db_session, fake_user)
     storage["main_user_id"] = user.user_id
     assert user.user_id is not None
 
 
-async def test_create_user_with_same_username(db_session):
-    fake_user = CreateUserModel(user_name="test_user", hashed_password="123")
+async def test_create_user_with_same_username(db_session) -> None:
+    fake_user = CreateUserModel(user_name="test_user", password="123")
     with pytest.raises(IntegrityError):
         await crud_user.create_user(db_session, fake_user)
 
 
-async def test_read_user(db_session, storage):
+async def test_read_user(db_session, storage) -> None:
     stored_user_id = storage["main_user_id"]
-    user_from_db: User = await crud_user.read_user(
+    user_from_db: User | None = await crud_user.read_user(
         session=db_session, user_id=stored_user_id, include_relations=None
     )
+    if user_from_db is None:
+        raise AssertionError
+
     assert user_from_db.user_name == "test_user"
 
 
 @pytest.mark.parametrize("user_name", other_users)
-async def test_create_users_to_follow(db_session, storage, user_name):
-    user_model = CreateUserModel(user_name=user_name, hashed_password="123")
+async def test_create_users_to_follow(db_session, storage, user_name) -> None:
+    user_model = CreateUserModel(user_name=user_name, password="123")
     new_user: User = await crud_user.create_user(db_session, user_model)
 
     if storage.get("other_users"):
@@ -54,12 +57,12 @@ async def test_create_users_to_follow(db_session, storage, user_name):
     assert new_user.user_id is not None
 
 
-async def test_users_count(db_session):
+async def test_users_count(db_session) -> None:
     all_users = await crud_user.read_all(db_session)
     assert len(all_users) == 5
 
 
-async def test_follow_users(db_session, storage):
+async def test_follow_users(db_session, storage) -> None:
     for user in storage["other_users"]:
         await crud_user.follow_user(
             session=db_session, user_who_follow=storage["main_user_id"], user_id=user.id
@@ -69,14 +72,17 @@ async def test_follow_users(db_session, storage):
         else:
             storage["following"] = [user]
 
-    user_from_db: User = await crud_user.read_user(
+    user_from_db: User | None = await crud_user.read_user(
         session=db_session, user_id=storage["main_user_id"], include_relations="all"
     )
+
+    if user_from_db is None:
+        raise AssertionError
 
     assert len(user_from_db.following) == 4
 
 
-async def test_unfollow_users(db_session, storage):
+async def test_unfollow_users(db_session, storage) -> None:
     for _ in range(2):
         to_unfollow: BriefInfoUserModel = storage["following"].pop()
         await crud_user.unfollow(
@@ -85,14 +91,17 @@ async def test_unfollow_users(db_session, storage):
             user_id=to_unfollow.id,
         )
 
-    user_from_db: User = await crud_user.read_user(
+    user_from_db: User | None = await crud_user.read_user(
         session=db_session, user_id=storage["main_user_id"], include_relations="all"
     )
+
+    if user_from_db is None:
+        raise AssertionError
 
     assert len(user_from_db.following) == 2
 
 
-async def test_create_media(db_session, storage):
+async def test_create_media(db_session, storage) -> None:
     file_name = "test_file.txt"
     storage["file_content"] = "content of file"
     with open(file_name, "w") as file:
@@ -112,7 +121,7 @@ async def test_create_media(db_session, storage):
     assert media.media_id is not None
 
 
-async def test_create_tweet(db_session, storage):
+async def test_create_tweet(db_session, storage) -> None:
     tweet_data = CreateTweetModelIn.parse_obj(
         {"tweet_data": "some text", "tweet_media_ids": [storage["media_id"]]}
     )
@@ -122,7 +131,7 @@ async def test_create_tweet(db_session, storage):
     assert tweet.author_id == storage["main_user_id"]
 
 
-async def test_read_tweet_with_media(db_session, storage):
+async def test_read_tweet_with_media(db_session, storage) -> None:
     tweet = (
         await crud_tweet.read_tweets(
             session=db_session,
@@ -130,7 +139,7 @@ async def test_read_tweet_with_media(db_session, storage):
     )[0]
 
     with open(
-        app_config.MEDIA_ROOT.as_posix() + tweet.attachments[0].link, "r"
+            app_config.MEDIA_ROOT / tweet.attachments[0].link, "r"
     ) as file:
         file_content = file.read()
 
@@ -140,7 +149,7 @@ async def test_read_tweet_with_media(db_session, storage):
     assert file_content == storage["file_content"]
 
 
-async def test_add_like(db_session: AsyncSession, storage):
+async def test_add_like(db_session: AsyncSession, storage) -> None:
     tweet: Tweet = (await crud_tweet.read_tweets(session=db_session))[0]
     likes_count_before = len(tweet.likes)
 
@@ -156,7 +165,7 @@ async def test_add_like(db_session: AsyncSession, storage):
     assert likes_count_after == likes_count_before + 1
 
 
-async def test_add_like_twice(db_session, storage):
+async def test_add_like_twice(db_session, storage) -> None:
     tweet: Tweet = (await crud_tweet.read_tweets(session=db_session))[0]
 
     with pytest.raises(IntegrityError):
@@ -165,7 +174,7 @@ async def test_add_like_twice(db_session, storage):
         )
 
 
-async def test_remove_like(db_session, storage):
+async def test_remove_like(db_session, storage) -> None:
     tweet: Tweet = (await crud_tweet.read_tweets(session=db_session))[0]
     likes_count_before = len(tweet.likes)
 
@@ -175,13 +184,13 @@ async def test_remove_like(db_session, storage):
 
     db_session.expire(tweet)
 
-    tweet: Tweet = (await crud_tweet.read_tweets(session=db_session))[0]
+    tweet = (await crud_tweet.read_tweets(session=db_session))[0]
     likes_count_after = len(tweet.likes)
     print(likes_count_after)
     assert likes_count_after == likes_count_before - 1
 
 
-async def test_delete_tweet(db_session, storage):
+async def test_delete_tweet(db_session, storage) -> None:
     tweets = await crud_tweet.read_tweets(session=db_session)
     tweets_count_before = len(tweets)
     tweet_id = tweets[0].tweet_id
@@ -195,7 +204,7 @@ async def test_delete_tweet(db_session, storage):
     assert tweets_count_before == tweets_count_after + 1
 
 
-async def test_create_tweets_by_other_users(db_session, storage):
+async def test_create_tweets_by_other_users(db_session, storage) -> None:
     tweet_counts = 2
     total_tweets = 0
     for user in storage["following"]:
@@ -220,7 +229,7 @@ async def test_create_tweets_by_other_users(db_session, storage):
     assert len(tweets) == total_tweets
 
 
-async def test_have_tweets_in_feed(db_session: AsyncSession, storage):
+async def test_have_tweets_in_feed(db_session: AsyncSession, storage) -> None:
     feed = await crud_tweet.read_feed(
         session=db_session, user_id=storage["main_user_id"]
     )
@@ -230,7 +239,7 @@ async def test_have_tweets_in_feed(db_session: AsyncSession, storage):
         assert tweet.tweet_id in storage["tweets_for_feed"]
 
 
-async def test_feed_sorting(db_session: AsyncSession, storage):
+async def test_feed_sorting(db_session: AsyncSession, storage) -> None:
     tweets_for_feed: list[int] = storage["tweets_for_feed"][:]
     users: list[BriefInfoUserModel] = storage["other_users"][:]
     sorted_tweet_id_list = []
@@ -254,7 +263,7 @@ async def test_feed_sorting(db_session: AsyncSession, storage):
 
 async def test_delete_tweet_that_does_not_belong_to_user(
     db_session: AsyncSession, storage
-):
+) -> None:
     tweet_id = random.choice(storage["tweets_for_feed"])
     result: bool = await crud_tweet.delete_tweet(
         session=db_session, user_id=storage["main_user_id"], tweet_id=tweet_id

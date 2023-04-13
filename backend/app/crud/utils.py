@@ -1,14 +1,14 @@
 from typing import Literal
 
 from db_models.user_model import User
-from sqlalchemy import Executable
+from sqlalchemy import Select
 from sqlalchemy.orm import selectinload
 
 
 def user_include_relations(
     include_relations: Literal["all", "followers", "following"] | None,
-    statement: Executable,
-) -> Executable:
+    statement: Select,
+) -> Select:
     if include_relations == "followers":
         statement = statement.options(
             selectinload(User.followers),

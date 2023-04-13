@@ -44,7 +44,7 @@ async def show_me(
 async def get_user(
     user_id: int, session: AsyncSession = Depends(dependencies.get_db_session)
 ) -> dict[str, Any]:
-    user: User = await crud_user.read_user(
+    user: User | None = await crud_user.read_user(
         session=session, user_id=user_id, include_relations="all"
     )
 

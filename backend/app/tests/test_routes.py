@@ -13,14 +13,13 @@ headers = {}
 async def test_create_all(create_all):
     """Creates database and initiates tables"""
     await create_all.__anext__()
-    # await create_all
 
 
 def test_create_user(test_client: TestClient, storage):
     """Create main user"""
     data = {
         "user_name": "test_user",
-        "hashed_password": 123,
+        "password": 123,
     }
 
     response = test_client.post("/api/users", json=data)
@@ -34,7 +33,7 @@ def test_cannot_create_user_with_same_username(test_client: TestClient):
     """Checks that we can not create user with same username"""
     data = {
         "user_name": "test_user",
-        "hashed_password": 123,
+        "password": 123,
     }
     response = test_client.post("/api/users", json=data)
     response_body = response.json()
@@ -58,7 +57,7 @@ def test_create_users_to_follow(test_client: TestClient, storage: dict, user_nam
     """Creates 4 users to follow them in the next test"""
     data = {
         "user_name": user_name,
-        "hashed_password": 1,
+        "password": 1,
     }
     # create other users
     response = test_client.post("/api/users", json=data)
@@ -151,9 +150,12 @@ def test_create_media(test_client: TestClient, storage):
     with open("for_tests.txt", "w") as file:
         file.write("content of file")
 
-    file = {"file": open("for_tests.txt", "rb")}
+    with open("for_tests.txt", "rb") as file:
+        file_to_upload = {"file": file}
 
-    response = test_client.post("/api/medias", files=file, headers=headers)
+        response = test_client.post(
+            "/api/medias", files=file_to_upload, headers=headers
+        )
 
     response_data: dict = response.json()
 

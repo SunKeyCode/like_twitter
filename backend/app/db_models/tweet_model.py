@@ -5,8 +5,9 @@ from db.base_class import Base
 from db_models.like_model import Like
 from db_models.media_model import Media
 from db_models.tweet_media_relation import MediaTweetRelation  # не удалять
-from sqlalchemy import Column, DateTime, ForeignKey, Identity, Integer, String
-from sqlalchemy.orm import Mapped, relationship
+from sqlalchemy import DateTime, ForeignKey, Identity, Integer, String
+from sqlalchemy.orm import Mapped, relationship, mapped_column
+
 
 # TODO подумать как решить проблему с импортом MediaTweetRelation
 
@@ -14,10 +15,13 @@ from sqlalchemy.orm import Mapped, relationship
 class Tweet(Base):
     __tablename__ = "table_tweets"
 
-    tweet_id: Mapped[int] = Column(Integer, Identity(always=True), primary_key=True)
-    author_id: Mapped[int] = Column(ForeignKey("table_users.user_id"), nullable=False)
-    content = Column(String, nullable=False)
-    created_at = Column(DateTime, default=datetime.now)
+    tweet_id = mapped_column(Integer, Identity(always=True), primary_key=True)
+    author_id: Mapped[int] = mapped_column(
+        ForeignKey("table_users.user_id"),
+        nullable=False,
+    )
+    content = mapped_column(String, nullable=False)
+    created_at = mapped_column(DateTime, default=datetime.now)
 
     likes: Mapped[List["Like"]] = relationship(
         lazy="raise", cascade="all, delete-orphan"

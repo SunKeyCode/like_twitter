@@ -5,7 +5,6 @@ from sqlalchemy import text
 from sqlalchemy.engine import make_url
 from sqlalchemy.engine.url import URL
 from sqlalchemy.ext.asyncio import create_async_engine
-from sqlalchemy_utils.functions import quote
 
 DB_URL = "postgresql+asyncpg://{user}:{password}@{host}/{db_name}".format(
     user=app_config.DB_USER,
@@ -41,7 +40,7 @@ async def create_db(url):
 
     async_engine = create_async_engine(url, isolation_level="AUTOCOMMIT")
     async with async_engine.begin() as conn:
-        query = "CREATE DATABASE {}".format(quote(conn, database))
+        query = "CREATE DATABASE {}".format(database)
         await conn.execute(text(query))
 
     await async_engine.dispose()
@@ -69,7 +68,7 @@ async def drop_db(url):
         await conn.execute(text(query))
 
         # Drop database
-        query = f"DROP DATABASE IF EXISTS {quote(conn, database)}"
+        query = f"DROP DATABASE IF EXISTS {database}"
         await conn.execute(text(query))
 
     await async_engine.dispose()

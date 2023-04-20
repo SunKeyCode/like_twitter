@@ -1,8 +1,9 @@
 from typing import Literal
 
-from db_models.user_model import User
 from sqlalchemy import Select
 from sqlalchemy.orm import selectinload
+
+from db_models.user_model import User
 
 
 def user_include_relations(

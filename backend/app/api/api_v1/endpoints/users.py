@@ -1,12 +1,13 @@
 from typing import Any
 
+from fastapi import APIRouter, Depends, HTTPException, status
+from sqlalchemy.ext.asyncio import AsyncSession
+
 from api import dependencies, utils
 from crud import crud_user
 from custom_exc.no_user_found import NoUserFoundError
 from db_models.user_model import User
-from fastapi import APIRouter, Depends, HTTPException, status
 from schemas import user_schema
-from sqlalchemy.ext.asyncio import AsyncSession
 
 router = APIRouter(prefix="/users")
 

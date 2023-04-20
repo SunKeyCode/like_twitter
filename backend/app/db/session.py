@@ -2,9 +2,10 @@ import os
 from logging import getLogger
 from logging.config import dictConfig
 
+from sqlalchemy.ext.asyncio import async_sessionmaker, create_async_engine
+
 from configs import app_config
 from configs.logger_config import LOGGER_CONF
-from sqlalchemy.ext.asyncio import async_sessionmaker, create_async_engine
 
 logger = getLogger("main.session")
 dictConfig(LOGGER_CONF)

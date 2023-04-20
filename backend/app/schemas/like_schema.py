@@ -1,4 +1,5 @@
 from pydantic import BaseModel, Field, validator
+
 from schemas.user_schema import BriefInfoUserModel
 
 

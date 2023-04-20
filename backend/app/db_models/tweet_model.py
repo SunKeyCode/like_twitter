@@ -1,13 +1,13 @@
 from datetime import datetime
 from typing import List
 
+from sqlalchemy import DateTime, ForeignKey, Identity, Integer, String
+from sqlalchemy.orm import Mapped, mapped_column, relationship
+
 from db.base_class import Base
 from db_models.like_model import Like
 from db_models.media_model import Media
 from db_models.tweet_media_relation import MediaTweetRelation  # не удалять
-from sqlalchemy import DateTime, ForeignKey, Identity, Integer, String
-from sqlalchemy.orm import Mapped, relationship, mapped_column
-
 
 # TODO подумать как решить проблему с импортом MediaTweetRelation
 

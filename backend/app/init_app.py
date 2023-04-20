@@ -1,14 +1,15 @@
 from logging import getLogger
 
+from fastapi import FastAPI
+from fastapi.exceptions import RequestValidationError
+from starlette.exceptions import HTTPException
+
 from api.api_v1 import exception_handlers
 from api.api_v1.routers import api_router
 from auth.endpoints import auth_router
 from custom_exc.db_exception import DbIntegrityError
 from custom_exc.no_user_found import NoUserFoundError
-from fastapi import FastAPI
-from fastapi.exceptions import RequestValidationError
 from logger import init_logger
-from starlette.exceptions import HTTPException
 
 logger = getLogger("main.create_app")
 
@@ -16,7 +17,7 @@ logger = getLogger("main.create_app")
 def create_app() -> FastAPI:
     init_logger()
 
-    app = FastAPI()
+    app = FastAPI(docs_url="/api/docs", openapi_url="/api/openapi.json")
     app.include_router(api_router, prefix="/api")
     app.include_router(auth_router)
 

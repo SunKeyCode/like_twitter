@@ -1,11 +1,12 @@
+from fastapi import APIRouter, Depends
+from sqlalchemy.ext.asyncio import AsyncSession
+from starlette import status
+
 from api import utils
 from api.dependencies import get_current_user, get_db_session, get_file
 from crud import crud_media
 from db_models.user_model import User
-from fastapi import APIRouter, Depends
 from schemas.media_schema import MediaModelOut
-from sqlalchemy.ext.asyncio import AsyncSession
-from starlette import status
 
 router = APIRouter(prefix="/medias")
 

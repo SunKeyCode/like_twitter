@@ -2,13 +2,23 @@ version: '3.9'
 
 services:
 
+  app:
+    build:
+      context: backend
+    container_name: fastapi_app
+    stop_signal: SIGKILL
+    ports:
+      - "8000:8000"
+    volumes:
+      - ./static/:/static
+      - ./backend/app:/backend/app
+      - ./.env:/.env
+    depends_on:
+      - postgres
+    restart: unless-stopped
+
   postgres:
     image: postgres
-#    restart: always
-#    command:
-#      - "postgres"
-#      - "-c"
-#      - "config_file=/var/lib/postgresql/data/postgresql.conf"
     environment:
       POSTGRES_USER: ${DB_USER}
       POSTGRES_PASSWORD: ${DB_PASSWORD}
@@ -18,7 +28,6 @@ services:
       - "5432:5432"
     volumes:
       - ./postgres_db/:/var/lib/postgresql/data
-#      - ./postgresql.conf:/var/lib/postgresql/data/postgresql.conf
     healthcheck:
       test: ["CMD-SHELL", "pg_isready -U ${DB_USER} -d ${DB_NAME}"]
       interval: 10s
@@ -35,3 +44,4 @@ services:
     volumes:
       - ./nginx/nginx.conf:/etc/nginx/nginx.conf
       - ./static/:/data/www/static
+    restart: unless-stopped

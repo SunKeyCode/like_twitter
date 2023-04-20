@@ -1,12 +1,13 @@
 from typing import Any
 
+from fastapi import APIRouter, Depends, HTTPException, status
+from fastapi.encoders import jsonable_encoder
+from sqlalchemy.ext.asyncio import AsyncSession
+
 from api import dependencies, utils
 from crud import crud_tweet
 from db_models.user_model import User
-from fastapi import APIRouter, Depends, HTTPException, status
-from fastapi.encoders import jsonable_encoder
 from schemas import tweet_schema
-from sqlalchemy.ext.asyncio import AsyncSession
 
 router = APIRouter(prefix="/tweets")
 

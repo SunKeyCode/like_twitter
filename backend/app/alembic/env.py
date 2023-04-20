@@ -1,13 +1,13 @@
 import asyncio
 from logging.config import fileConfig
 
-from alembic import context
-from configs import app_config
-from db.base import Base
 from sqlalchemy import pool
 from sqlalchemy.engine import Connection
 from sqlalchemy.ext.asyncio import async_engine_from_config
 
+from alembic import context
+from configs import app_config
+from db.base import Base
 
 DB_URL = "postgresql+asyncpg://{user}:{password}@{host}/{db_name}".format(
     user=app_config.DB_USER,

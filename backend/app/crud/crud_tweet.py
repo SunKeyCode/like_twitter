@@ -1,15 +1,16 @@
 from typing import Sequence
 
+from sqlalchemy import desc, func
+from sqlalchemy.ext.asyncio import AsyncSession
+from sqlalchemy.future import select
+from sqlalchemy.orm import aliased, contains_eager, joinedload, selectinload
+
 from db_models.follower_model import Follower
 from db_models.like_model import Like
 from db_models.media_model import Media
 from db_models.tweet_model import Tweet
 from db_models.user_model import User
 from schemas.tweet_schema import CreateTweetModelIn
-from sqlalchemy import desc, func
-from sqlalchemy.ext.asyncio import AsyncSession
-from sqlalchemy.future import select
-from sqlalchemy.orm import aliased, contains_eager, joinedload, selectinload
 
 
 async def create_tweet(

@@ -3,10 +3,11 @@ import os
 from typing import Any, Generator
 
 import pytest
-from configs import app_config
-from db.base import *
 from fastapi.testclient import TestClient
 from sqlalchemy.ext.asyncio import async_sessionmaker, create_async_engine
+
+from configs import app_config
+from db.base import *
 from tests.utils.db import create_db, drop_db
 
 os.environ.setdefault("TESTING", "True")

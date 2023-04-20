@@ -1,10 +1,11 @@
 from copy import copy
 
-from configs import app_config
 from sqlalchemy import text
 from sqlalchemy.engine import make_url
 from sqlalchemy.engine.url import URL
 from sqlalchemy.ext.asyncio import create_async_engine
+
+from configs import app_config
 
 DB_URL = "postgresql+asyncpg://{user}:{password}@{host}/{db_name}".format(
     user=app_config.DB_USER,

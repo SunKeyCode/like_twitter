@@ -4,9 +4,10 @@ from logging import getLogger
 from typing import Any
 
 import aiofiles
+from sqlalchemy.ext.asyncio import AsyncSession
+
 from configs import app_config
 from db_models.media_model import Media
-from sqlalchemy.ext.asyncio import AsyncSession
 
 logger = getLogger("main.crud_media")
 

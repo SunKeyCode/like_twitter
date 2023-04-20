@@ -1,12 +1,13 @@
-from api.dependencies import get_db_session
-from auth.utils import create_access_token
-from crud import crud_user
-from db_models.user_model import User
 from fastapi import APIRouter, Depends, HTTPException
 from fastapi.security import OAuth2PasswordRequestForm
 from starlette.requests import Request
 from starlette.responses import HTMLResponse
 from starlette.templating import Jinja2Templates
+
+from api.dependencies import get_db_session
+from auth.utils import create_access_token
+from crud import crud_user
+from db_models.user_model import User
 
 auth_router = APIRouter(prefix="/auth", tags=["auth"])
 

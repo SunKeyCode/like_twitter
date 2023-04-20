@@ -1,6 +1,7 @@
-from db.base_class import Base
 from sqlalchemy import ForeignKey
-from sqlalchemy.orm import Mapped, relationship, mapped_column
+from sqlalchemy.orm import Mapped, mapped_column, relationship
+
+from db.base_class import Base
 
 
 class Like(Base):

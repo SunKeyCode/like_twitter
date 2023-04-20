@@ -1,12 +1,13 @@
-from typing import Literal, Union, Optional, Sequence
+from typing import Literal, Optional, Sequence, Union
+
+from sqlalchemy import delete
+from sqlalchemy.ext.asyncio import AsyncSession
+from sqlalchemy.future import select
 
 from crud.utils import user_include_relations
 from db_models.follower_model import Follower
 from db_models.user_model import User
 from schemas.user_schema import CreateUserModel
-from sqlalchemy import delete
-from sqlalchemy.ext.asyncio import AsyncSession
-from sqlalchemy.future import select
 
 
 async def create_user(session: AsyncSession, user_data: CreateUserModel) -> User:
@@ -51,7 +52,7 @@ async def read_user_by_username(
 
 async def read_all(
     session: AsyncSession,
-    include_relations: Optional[Literal['all', 'followers', 'following']] = None,
+    include_relations: Optional[Literal["all", "followers", "following"]] = None,
 ) -> Sequence[User]:
     statement = select(User)
 

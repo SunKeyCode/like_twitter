@@ -1,9 +1,10 @@
 import os
 from logging import getLogger
 
+from sqlalchemy import Column, Identity, Integer, String, event
+
 from configs.app_config import DEBUG, MEDIA_ROOT
 from db.base_class import Base
-from sqlalchemy import Column, Identity, Integer, String, event
 
 logger = getLogger("main.media_model")
 

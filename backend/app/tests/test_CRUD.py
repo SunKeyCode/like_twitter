@@ -1,14 +1,15 @@
 import random
 
 import pytest
+from sqlalchemy.exc import IntegrityError
+from sqlalchemy.ext.asyncio import AsyncSession
+
 from configs import app_config
 from crud import crud_media, crud_tweet, crud_user
 from db_models.tweet_model import Tweet
 from db_models.user_model import User
 from schemas.tweet_schema import CreateTweetModelIn
 from schemas.user_schema import BriefInfoUserModel, CreateUserModel
-from sqlalchemy.exc import IntegrityError
-from sqlalchemy.ext.asyncio import AsyncSession
 
 pytestmark = pytest.mark.asyncio
 
@@ -138,9 +139,7 @@ async def test_read_tweet_with_media(db_session, storage) -> None:
         )
     )[0]
 
-    with open(
-            app_config.MEDIA_ROOT / tweet.attachments[0].link, "r"
-    ) as file:
+    with open(app_config.MEDIA_ROOT / tweet.attachments[0].link, "r") as file:
         file_content = file.read()
 
     assert tweet.author_id == storage["main_user_id"]

@@ -1,11 +1,12 @@
 from datetime import datetime
 from typing import List
 
+from sqlalchemy import Date, Identity, Integer, String
+from sqlalchemy.orm import Mapped, mapped_column, relationship
+
 from db.base_class import Base
 from db_models.follower_model import Follower
 from db_models.tweet_model import Tweet
-from sqlalchemy import Date, Identity, Integer, String
-from sqlalchemy.orm import Mapped, relationship, mapped_column
 
 
 class User(Base):

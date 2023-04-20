@@ -1,12 +1,6 @@
 from logging import getLogger
 from typing import Any, Callable
 
-from configs import app_config
-from crud import crud_user
-from custom_exc.db_exception import DbIntegrityError
-from custom_exc.no_user_found import NoUserFoundError
-from db.session import async_session
-from db_models.user_model import User
 from fastapi import Depends, UploadFile
 from fastapi.security import OAuth2PasswordBearer
 from jose import JWTError, jwt
@@ -16,6 +10,13 @@ from sqlalchemy.orm.exc import FlushError
 from starlette import status
 from starlette.exceptions import HTTPException
 from starlette.requests import Request
+
+from configs import app_config
+from crud import crud_user
+from custom_exc.db_exception import DbIntegrityError
+from custom_exc.no_user_found import NoUserFoundError
+from db.session import async_session
+from db_models.user_model import User
 
 logger = getLogger("main.dependencies")
 

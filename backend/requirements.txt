@@ -19,7 +19,6 @@ httpx==0.23.3
 idna==3.4
 iniconfig==2.0.0
 Jinja2==3.1.2
-line-profiler==4.0.2
 logging-tree==1.9
 Mako==1.2.4
 MarkupSafe==2.1.2

@@ -1,14 +1,15 @@
 from logging import getLogger
 
-from configs.app_config import DEBUG
-from custom_exc.db_exception import DbIntegrityError
-from custom_exc.no_user_found import NoUserFoundError
 from fastapi import Request
 from fastapi.encoders import jsonable_encoder
 from fastapi.exceptions import RequestValidationError
 from starlette import status
 from starlette.exceptions import HTTPException
 from starlette.responses import JSONResponse
+
+from configs.app_config import DEBUG
+from custom_exc.db_exception import DbIntegrityError
+from custom_exc.no_user_found import NoUserFoundError
 
 logger = getLogger("main.exception_handlers")
 

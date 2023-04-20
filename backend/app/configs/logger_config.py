@@ -1,5 +1,6 @@
 import sys
 
+from configs.app_config import DEBUG
 
 LOGGER_CONF = {
     "version": 1,
@@ -36,7 +37,7 @@ LOGGER_CONF = {
     },
     "loggers": {
         "main": {
-            "level": "DEBUG",
+            "level": "DEBUG" if DEBUG else "INFO",
             "handlers": ["console_handler", "error_file_handler"],
         },
         "uvicorn.access": {

@@ -17,7 +17,6 @@ other_users = ["user2", "user3", "user4", "user5"]
 
 
 async def test_create_all(create_all) -> None:
-    # await create_all
     await create_all.__anext__()
 
 

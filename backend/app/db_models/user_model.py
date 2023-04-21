@@ -6,7 +6,6 @@ from sqlalchemy.orm import Mapped, mapped_column, relationship
 
 from db.base_class import Base
 from db_models.follower_model import Follower
-from db_models.tweet_model import Tweet
 
 
 class User(Base):
@@ -18,9 +17,6 @@ class User(Base):
     first_name = mapped_column(String(50), nullable=True)
     last_name = mapped_column(String(50), nullable=True)
     reg_date = mapped_column(Date, default=datetime.today)
-
-    # TODO это нужно удалить????????????
-    tweets: Mapped[List["Tweet"]] = relationship(back_populates="author", lazy="raise")
 
     followers: Mapped[List["User"]] = relationship(
         "User",

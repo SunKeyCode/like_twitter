@@ -12,7 +12,8 @@ from db.base import Base
 DB_URL = "postgresql+asyncpg://{user}:{password}@{host}/{db_name}".format(
     user=app_config.DB_USER,
     password=app_config.DB_PASSWORD,
-    host=app_config.DB_HOST,
+    # host=app_config.DB_HOST,
+    host="localhost",
     db_name=app_config.DB_NAME,
 )
 

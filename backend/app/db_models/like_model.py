@@ -2,6 +2,7 @@ from sqlalchemy import ForeignKey
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 
 from db.base_class import Base
+from db_models.user_model import User
 
 
 class Like(Base):

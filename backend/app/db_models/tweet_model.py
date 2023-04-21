@@ -7,6 +7,7 @@ from sqlalchemy.orm import Mapped, mapped_column, relationship
 from db.base_class import Base
 from db_models.like_model import Like
 from db_models.media_model import Media
+from db_models.user_model import User
 from db_models.tweet_media_relation import MediaTweetRelation  # не удалять
 
 # TODO подумать как решить проблему с импортом MediaTweetRelation
@@ -27,7 +28,7 @@ class Tweet(Base):
         lazy="raise", cascade="all, delete-orphan"
     )
 
-    author: Mapped["User"] = relationship(back_populates="tweets", lazy="raise")
+    author: Mapped["User"] = relationship(lazy="raise")
 
     attachments: Mapped[List["Media"]] = relationship(
         secondary="table_media_tweet_relation",

@@ -5,7 +5,10 @@ from dotenv import load_dotenv
 
 load_dotenv()
 
-DEBUG = True
+if os.environ.get("DEBUG") == "true":
+    DEBUG = True
+else:
+    DEBUG = False
 
 DB_NAME = os.environ.get("DB_NAME")
 DB_NAME_TEST = os.environ.get("DB_NAME_TEST")

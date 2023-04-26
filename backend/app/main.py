@@ -7,4 +7,7 @@ from init_app import create_app
 app = create_app()
 
 if __name__ == "__main__":
-    uvicorn.run(host="0.0.0.0", reload=DEBUG, app="main:app")
+    workers = 4
+    if DEBUG:
+        workers = 1
+    uvicorn.run(host="0.0.0.0", reload=DEBUG, workers=workers, app="main:app")

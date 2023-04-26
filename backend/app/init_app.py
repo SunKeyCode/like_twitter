@@ -1,4 +1,5 @@
 from logging import getLogger
+from os import getpid
 
 from fastapi import FastAPI
 from fastapi.exceptions import RequestValidationError
@@ -47,6 +48,6 @@ def create_app() -> FastAPI:
     )
 
     # app.add_middleware(middleware.LoggingRequestsAsJson)
-    logger.info("Application started.")
+    logger.info(f"Application started. Worker pid={getpid()}.")
 
     return app

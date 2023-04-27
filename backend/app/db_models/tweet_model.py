@@ -8,9 +8,7 @@ from db.base_class import Base
 from db_models.like_model import Like
 from db_models.media_model import Media
 from db_models.user_model import User
-from db_models.tweet_media_relation import MediaTweetRelation  # не удалять
-
-# TODO подумать как решить проблему с импортом MediaTweetRelation
+from db_models.tweet_media_relation import tweet_media_relationship
 
 
 class Tweet(Base):
@@ -31,7 +29,7 @@ class Tweet(Base):
     author: Mapped["User"] = relationship(lazy="raise")
 
     attachments: Mapped[List["Media"]] = relationship(
-        secondary="table_media_tweet_relation",
+        secondary=tweet_media_relationship,
         lazy="raise",
         cascade="all, delete-orphan",
         single_parent=True,

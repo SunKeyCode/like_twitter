@@ -47,6 +47,6 @@ def create_app() -> FastAPI:
         handler=exception_handlers.unexpected_error_handler,
     )
 
-    logger.info(f"Application started. Worker pid={getpid()}.")
+    logger.info("Application started. Worker pid=%s.", getpid())
 
     return app

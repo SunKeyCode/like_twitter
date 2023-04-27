@@ -4,7 +4,7 @@ from random import choice
 import pytest
 from httpx import AsyncClient
 
-from tests.conftest import app
+from .conftest import app
 
 pytestmark = pytest.mark.asyncio
 
@@ -46,7 +46,7 @@ async def test_cannot_create_user_with_same_username() -> None:
     assert not response_body["result"]
 
 
-async def test_read_user(storage) -> None:
+async def test_get_user(storage) -> None:
     """Checks created user"""
     user_id = storage["main_user_id"]
     async with AsyncClient(app=app, base_url="http://testserver") as client:
@@ -55,6 +55,13 @@ async def test_read_user(storage) -> None:
 
     assert response.status_code == 200
     assert user_data["user"]["name"] == "test_user"
+
+
+async def test_cannot_get_non_existing_user() -> None:
+    async with AsyncClient(app=app, base_url="http://testserver") as client:
+        response = await client.get("/api/users/0")
+
+    assert response.status_code == 404
 
 
 @pytest.mark.parametrize("user_name", other_users)

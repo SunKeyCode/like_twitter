@@ -10,7 +10,7 @@ from starlette.exceptions import HTTPException
 from api.dependencies import get_db_session
 from configs import app_config
 from custom_exc.db_exception import DbIntegrityError
-from db.base import *
+from db.base import Base
 from tests.utils.db import create_db, drop_db
 
 from main import app

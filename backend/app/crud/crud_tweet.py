@@ -31,9 +31,8 @@ async def create_tweet(
         if tweet_media_ids:
             for media_id in tweet_media_ids:
                 media = await session.get(Media, media_id)
-                if media is None:
-                    continue
-                tweet.attachments.append(media)
+                if media:
+                    tweet.attachments.append(media)
         session.add(tweet)
 
     return tweet

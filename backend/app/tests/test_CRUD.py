@@ -35,15 +35,26 @@ async def test_create_user_with_same_username(db_session) -> None:
     await db_session.close()
 
 
-async def test_read_user(db_session, storage) -> None:
+async def test_read_user_by_id(db_session, storage) -> None:
     stored_user_id = storage["main_user_id"]
     user_from_db: User | None = await crud_user.read_user(
         session=db_session, user_id=stored_user_id, include_relations=None
     )
+    await db_session.close()
     if user_from_db is None:
         raise AssertionError
-    await db_session.close()
     assert user_from_db.user_name == "test_user"
+
+
+async def test_read_user_by_name(db_session) -> None:
+    user: User = await crud_user.read_user_by_username(
+        session=db_session,
+        username="test_user"
+    )
+    await db_session.close()
+    if user is None:
+        raise AssertionError
+    assert user.user_name == "test_user"
 
 
 @pytest.mark.parametrize("user_name", other_users)
@@ -266,7 +277,7 @@ async def test_feed_sorting(db_session: AsyncSession, storage) -> None:
 
 
 async def test_delete_tweet_that_does_not_belong_to_user(
-    db_session: AsyncSession, storage
+        db_session: AsyncSession, storage
 ) -> None:
     tweet_id = random.choice(storage["tweets_for_feed"])
     result: bool = await crud_tweet.delete_tweet(

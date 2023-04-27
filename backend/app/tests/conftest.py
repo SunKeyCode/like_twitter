@@ -1,5 +1,4 @@
 import asyncio
-from typing import Any
 
 import pytest
 from sqlalchemy.exc import IntegrityError
@@ -28,7 +27,50 @@ async_engine = create_async_engine(DB_URL)
 
 async_session_test = async_sessionmaker(bind=async_engine, expire_on_commit=False)
 
-testing_cache: dict[str, Any] = {}
+
+@pytest.fixture(scope="module")
+def event_loop():
+    """
+    Creates an instance of the default event loop for the test session.
+    """
+    policy = asyncio.get_event_loop_policy()
+    loop = policy.new_event_loop()
+    yield loop
+    loop.close()
+
+
+@pytest.fixture(scope="module")
+def storage():
+    return {}
+
+
+@pytest.fixture(scope="module")
+def engine():
+    return create_async_engine(DB_URL)
+
+
+@pytest.fixture(scope="module")
+def async_session(engine):
+    return async_sessionmaker(bind=engine, expire_on_commit=False)
+
+
+@pytest.fixture(scope="module")
+async def create_all(engine):
+    await drop_db(DB_URL)
+    await create_db(DB_URL)
+
+    async with engine.begin() as conn:
+        await conn.run_sync(Base.metadata.create_all)
+
+    yield 1
+
+    await drop_db(DB_URL)
+
+
+@pytest.fixture(scope="function")
+def db_session(async_session):
+    session = async_session()
+    yield session
 
 
 async def override_db_session():
@@ -45,39 +87,3 @@ async def override_db_session():
 
 
 app.dependency_overrides[get_db_session] = override_db_session
-
-
-@pytest.fixture(scope="session")
-def event_loop():
-    """
-    Creates an instance of the default event loop for the test session.
-    """
-    policy = asyncio.get_event_loop_policy()
-    loop = policy.new_event_loop()
-    yield loop
-    loop.close()
-
-
-@pytest.fixture(scope="session")
-def storage():
-    return testing_cache
-
-
-@pytest.fixture(scope="session")
-async def create_all():
-    await drop_db(DB_URL)
-    await create_db(DB_URL)
-
-    async with async_engine.begin() as conn:
-        await conn.run_sync(Base.metadata.drop_all)
-        await conn.run_sync(Base.metadata.create_all)
-
-    yield None
-    await drop_db(DB_URL)
-
-
-@pytest.fixture(scope="session")
-def db_session():
-    session = async_session_test()
-    yield session
-    session.close()

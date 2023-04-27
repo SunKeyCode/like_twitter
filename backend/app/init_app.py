@@ -47,7 +47,6 @@ def create_app() -> FastAPI:
         handler=exception_handlers.unexpected_error_handler,
     )
 
-    # app.add_middleware(middleware.LoggingRequestsAsJson)
     logger.info(f"Application started. Worker pid={getpid()}.")
 
     return app

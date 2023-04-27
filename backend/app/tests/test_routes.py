@@ -105,6 +105,7 @@ async def test_read_user_with_followers(storage):
             user_2_id = user["id"]
             break
     storage["user_2_id"] = user_2_id
+
     assert response.status_code == 200
     assert len(user_data["user"]["following"]) == len(other_users)
     assert user_2_id > 0
@@ -171,6 +172,7 @@ async def test_create_media(storage) -> None:
         storage["tweet_media_ids"] = [media_id]
     else:
         storage["tweet_media_ids"] = []
+
     assert response.status_code == 201
     assert media_id is not None
     assert response.json()["result"]
@@ -193,7 +195,7 @@ async def test_create_tweet(storage: dict):
     assert tweet_id > 0
 
 
-async def test_like(storage: dict):
+async def test_add_like(storage: dict):
     """Likes tweet"""
     tweet_id = storage["tweet_id"]
     headers["api-key"] = str(storage["main_user_id"])
@@ -217,7 +219,9 @@ async def test_delete_like_and_add_again(storage: dict):
     tweet_id = storage["tweet_id"]
     headers["api-key"] = str(storage["main_user_id"])
     async with AsyncClient(app=app, base_url="http://testserver") as client:
-        await client.delete(f"/api/tweets/{tweet_id}/likes", headers=headers)
+        response = await client.delete(f"/api/tweets/{tweet_id}/likes", headers=headers)
+        assert response.status_code == 202
+        assert response.json()["result"]
         response = await client.post(f"/api/tweets/{tweet_id}/likes", headers=headers)
 
     assert response.status_code == 201
@@ -319,7 +323,7 @@ async def test_feed(storage: dict):
             assert response.status_code == 201
             tweet["likes"] += 1
 
-    # sort tweets in storage by likes and tweet_id
+        # sort tweets in storage by likes and tweet_id
         sorted_storage_tweet_list = sorted(
             storage["other_tweets"],
             key=itemgetter("likes", "tweet_id"),
@@ -346,3 +350,10 @@ async def test_delete_not_my_tweet(storage: dict):
             headers=headers
         )
     assert response.status_code == 400
+
+
+async def test_conf():
+    async with AsyncClient(app=app, base_url="http://testserver") as client:
+        response = await client.get(url="/api/configs")
+
+    assert response.status_code == 200

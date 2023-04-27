@@ -1,3 +1,5 @@
 /.idea/
 /.env
 /backend/app/.mypy_cache/
+/backend/app/.pytest_cache/
+/backend/app/tests/.pytest_cache/

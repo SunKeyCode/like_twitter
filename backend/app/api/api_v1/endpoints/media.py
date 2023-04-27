@@ -20,4 +20,5 @@ async def create_medias(
     media = await crud_media.create_media(
         session=session, file_data=file_data, user_id=current_user.user_id
     )
+
     return utils.reformat_any_response(key="media_id", value=media.media_id)

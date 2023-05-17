@@ -12,3 +12,8 @@ async def get_configs():
         "db_host": app_config.DB_HOST,
         "base_dir": app_config.BASE_DIR,
     }
+
+
+@router.get("/sentry-debug")
+async def trigger_error():
+    division_by_zero = 1 / 0

@@ -3,6 +3,7 @@ from os import getpid
 
 from fastapi import FastAPI
 from fastapi.exceptions import RequestValidationError
+import sentry_sdk
 from starlette.exceptions import HTTPException
 
 from api.api_v1 import exception_handlers
@@ -13,6 +14,15 @@ from custom_exc.no_user_found import NoUserFoundError
 from logger import init_logger
 
 logger = getLogger("main.create_app")
+
+sentry_sdk.init(
+    dsn="https://baa5f60a11bb44399c12a97ff60ee570@o4504164192681984.ingest.sentry.io/4505124061118464",
+
+    # Set traces_sample_rate to 1.0 to capture 100%
+    # of transactions for performance monitoring.
+    # We recommend adjusting this value in production,
+    traces_sample_rate=1.0,
+)
 
 
 def create_app() -> FastAPI:

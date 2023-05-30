@@ -49,7 +49,7 @@ async def test_read_user_by_id(db_session, storage) -> None:
 async def test_read_user_by_name(db_session) -> None:
     user: User = await crud_user.read_user_by_username(
         session=db_session,
-        username="test_user"
+        username="test_user",
     )
     await db_session.close()
     if user is None:
@@ -277,7 +277,7 @@ async def test_feed_sorting(db_session: AsyncSession, storage) -> None:
 
 
 async def test_delete_tweet_that_does_not_belong_to_user(
-        db_session: AsyncSession, storage
+    db_session: AsyncSession, storage
 ) -> None:
     tweet_id = random.choice(storage["tweets_for_feed"])
     result: bool = await crud_tweet.delete_tweet(

@@ -98,10 +98,10 @@ async def delete_tweet(session: AsyncSession, tweet_id: int, user_id: int):
     select_query = (
         select(Tweet)
         .where(Tweet.tweet_id == tweet_id, Tweet.author_id == user_id)
-        # .options(
-        #     selectinload(Tweet.likes),
-        #     selectinload(Tweet.attachments),
-        # )
+        .options(
+            selectinload(Tweet.likes),
+            selectinload(Tweet.attachments),
+        )
     )
 
     async with session.begin():

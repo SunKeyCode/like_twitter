@@ -354,7 +354,7 @@ async def test_delete_not_my_tweet(storage: dict):
     async with AsyncClient(app=app, base_url="http://testserver") as client:
         response = await client.delete(
             f"/api/tweets/{tweet['tweet_id']}",
-            headers=headers
+            headers=headers,
         )
     assert response.status_code == 400
 

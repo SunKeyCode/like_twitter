@@ -14,6 +14,12 @@ async def get_configs():
     }
 
 
-@router.get("/sentry-debug")
+@router.get("/sentry-debug", include_in_schema=False)
 async def trigger_error():
     division_by_zero = 1 / 0
+    return {"result": division_by_zero}
+
+
+@router.get("/test_endpoint", include_in_schema=False)
+async def speed_test():
+    return {"result": True}
